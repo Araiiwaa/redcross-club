@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#C8102E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Red Cross Club">
+<title>Red Cross Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --red:#C8102E;
+    --red-dark:#8F0B21;
+    --red-light:#F6DCDF;
+    --cream:#FBF7EF;
+    --paper:#FFFFFF;
+    --ink:#221E1B;
+    --muted:#8A8178;
+    --line:#E9E1D3;
+    --gold:#E7A93E;
+    --gold-dark:#8A5F13;
+    --teal:#3E7C78;
+    --teal-dark:#204A47;
+    --green:#4C7A5D;
+    --green-dark:#2C4A38;
+    --shadow: 0 1px 2px rgba(34,30,27,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior-y:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button, .chip, .navbtn, .status-pill{
+    -webkit-touch-callout:none;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  #app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    background:var(--cream);
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  h1,h2,h3{font-family:'Barlow Condensed',sans-serif; font-weight:800; letter-spacing:0.01em; margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* header */
+  header{
+    padding:calc(18px + env(safe-area-inset-top)) 20px 0 20px;
+    background:var(--cream);
+    position:sticky; top:0; z-index:20;
+  }
+  .brandrow{display:flex; align-items:center; gap:10px;}
+  .cross-logo{
+    width:30px;height:30px;flex-shrink:0;position:relative;
+    background:var(--red); border-radius:6px;
+  }
+  .cross-logo::before,.cross-logo::after{
+    content:""; position:absolute; background:var(--paper);
+  }
+  .cross-logo::before{ left:44%; top:20%; width:12%; height:60%; }
+  .cross-logo::after{ left:20%; top:44%; width:60%; height:12%; }
+  .brand-text{flex:1; min-width:0;}
+  .brand-text h1{font-size:22px; line-height:1; text-transform:uppercase; color:var(--ink);}
+  .brand-text .tagline{font-size:12px; color:var(--muted); margin-top:2px;}
+  .edit-name-btn{
+    border:none;background:transparent;color:var(--muted);cursor:pointer;
+    width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .pulse-wrap{margin:14px -20px 0 -20px; height:20px; overflow:hidden;}
+  .pulse-wrap svg{display:block;width:100%;height:100%;}
+
+  main{flex:1; padding:14px 20px 100px 20px;}
+
+  /* segmented control */
+  .segmented{
+    display:flex; background:var(--paper); border:1px solid var(--line); border-radius:10px;
+    padding:3px; margin-bottom:16px; gap:2px;
+  }
+  .segmented button{
+    flex:1; border:none; background:transparent; padding:8px 6px; font-family:'Inter',sans-serif;
+    font-weight:600; font-size:12.5px; color:var(--muted); border-radius:7px; cursor:pointer;
+    text-transform:uppercase; letter-spacing:0.02em;
+  }
+  .segmented button.active{background:var(--ink); color:var(--paper);}
+
+  .section-title{font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600; margin:18px 0 8px 2px; font-family:'Inter',sans-serif;}
+  .section-title:first-child{margin-top:0;}
+
+  /* cards */
+  .card{
+    background:var(--paper); border:1px solid var(--line); border-radius:12px;
+    padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow);
+  }
+  .row{display:flex; align-items:center; gap:12px;}
+  .row-between{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+
+  .empty{
+    text-align:center; padding:38px 20px; color:var(--muted);
+  }
+  .empty .plus-badge{
+    width:42px;height:42px;border-radius:50%;background:var(--red-light);color:var(--red);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 12px auto;font-size:22px;font-weight:700;
+  }
+  .empty h3{font-size:18px; color:var(--ink); margin-bottom:4px; text-transform:none;}
+  .empty p{font-size:13px; margin:0 0 14px 0; line-height:1.5;}
+
+  /* buttons */
+  .btn{
+    border:none; border-radius:9px; padding:10px 16px; font-family:'Inter',sans-serif; font-weight:600;
+    font-size:13.5px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .btn-primary{background:var(--red); color:#fff;}
+  .btn-primary:active{background:var(--red-dark);}
+  .btn-ghost{background:var(--paper); color:var(--ink); border:1px solid var(--line);}
+  .btn-block{width:100%;}
+  .btn-sm{padding:6px 12px; font-size:12.5px;}
+  .icon-btn{
+    border:none; background:transparent; color:var(--muted); cursor:pointer; width:30px;height:30px;
+    display:flex;align-items:center;justify-content:center; flex-shrink:0; border-radius:7px;
+  }
+  .icon-btn:active{background:var(--line);}
+
+  .fab{
+    position:fixed; bottom:88px; right:calc(50% - 240px + 20px);
+    width:52px;height:52px;border-radius:50%; background:var(--red); color:#fff; border:none;
+    font-size:26px; box-shadow:0 3px 10px rgba(200,16,46,0.35); cursor:pointer; z-index:30;
+    display:flex;align-items:center;justify-content:center;
+  }
+  @media (max-width:520px){ .fab{ right:20px; } }
+
+  /* attendance rows */
+  .member-row{padding:12px 4px;}
+  .member-row + .member-row{border-top:1px solid var(--line);}
+  .avatar{
+    width:34px;height:34px;border-radius:50%;background:var(--red-light);color:var(--red-dark);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;
+  }
+  .mname{font-weight:600; font-size:14.5px;}
+  .msub{font-size:11.5px; color:var(--muted); margin-top:1px;}
+  .status-pill{
+    border:none; border-radius:20px; padding:7px 13px; font-weight:700; font-size:11.5px;
+    text-transform:uppercase; letter-spacing:0.03em; cursor:pointer; min-width:78px; text-align:center;
+  }
+  .status-present{background:#E4EFE7; color:var(--green-dark);}
+  .status-absent{background:var(--red-light); color:var(--red-dark);}
+  .status-excused{background:#FBEDD3; color:var(--gold-dark);}
+  .status-none{background:var(--line); color:var(--muted);}
+
+  .stat-strip{display:flex; gap:8px; margin-bottom:14px;}
+  .stat-box{flex:1; background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:10px 8px; text-align:center;}
+  .stat-num{font-family:'IBM Plex Mono',monospace; font-weight:500; font-size:19px;}
+  .stat-lbl{font-size:10px; text-transform:uppercase; color:var(--muted); letter-spacing:0.05em; margin-top:2px;}
+
+  .meeting-picker{margin-bottom:14px;}
+  select, input, textarea{
+    font-family:'Inter',sans-serif; font-size:14px; border:1px solid var(--line); border-radius:9px;
+    padding:10px 12px; width:100%; background:var(--paper); color:var(--ink);
+  }
+  select:focus, input:focus, textarea:focus{outline:2px solid var(--red); outline-offset:1px;}
+  label.field-label{font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; display:block; margin:12px 0 6px 0;}
+  label.field-label:first-child{margin-top:0;}
+
+  .bar-bg{height:6px; background:var(--line); border-radius:4px; overflow:hidden; margin-top:6px;}
+  .bar-fill{height:100%; background:var(--green);}
+
+  /* resource / news cards */
+  .chip-row{display:flex; gap:7px; overflow-x:auto; padding-bottom:4px; margin-bottom:14px; -ms-overflow-style:none; scrollbar-width:none;}
+  .chip-row::-webkit-scrollbar{display:none;}
+  .chip{
+    flex-shrink:0; border:1px solid var(--line); background:var(--paper); color:var(--muted);
+    padding:7px 14px; border-radius:20px; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .chip.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+  .res-card{display:flex; align-items:flex-start; gap:12px;}
+  .res-icon{
+    width:38px;height:38px;border-radius:9px; flex-shrink:0; display:flex;align-items:center;justify-content:center;
+    font-weight:700; font-size:15px;
+  }
+  .cat-forms .res-icon{background:var(--red-light); color:var(--red-dark);}
+  .cat-photos .res-icon{background:#FBEDD3; color:var(--gold-dark);}
+  .cat-slides .res-icon{background:#E1EEED; color:var(--teal-dark);}
+  .cat-docs .res-icon{background:var(--line); color:var(--ink);}
+  .cat-other .res-icon{background:var(--line); color:var(--ink);}
+  .res-title{font-weight:600; font-size:14.5px;}
+  .res-note{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.4;}
+  .res-cat-lbl{font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted); font-weight:600; margin-top:5px;}
+
+  .photo-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:6px;}
+  .photo-tile{
+    position:relative; display:block; aspect-ratio:1/1; border-radius:10px; overflow:hidden;
+    background:var(--line); border:1px solid var(--line); text-decoration:none;
+  }
+  .photo-tile-img{width:100%;height:100%;object-fit:cover; display:block;}
+  .photo-tile-img.loading{opacity:0;}
+  .photo-tile-cap{
+    position:absolute; left:0; right:0; bottom:0; padding:16px 8px 6px 8px; font-size:11.5px; color:#fff;
+    background:linear-gradient(to top, rgba(34,30,27,0.75), rgba(34,30,27,0));
+  }
+  .photo-del{
+    position:absolute; top:4px; right:4px; background:rgba(34,30,27,0.55); color:#fff; width:24px;height:24px;
+  }
+  .photo-del:active{background:rgba(34,30,27,0.8);}
+  .upload-preview{
+    width:100%; max-height:220px; object-fit:contain; border-radius:10px; margin-bottom:4px; display:none; background:var(--line);
+  }
+  .upload-preview.show{display:block;}
+  .file-drop{
+    border:1.5px dashed var(--line); border-radius:10px; padding:20px 14px; text-align:center; color:var(--muted);
+    font-size:13px; cursor:pointer;
+  }
+
+  .news-card{padding:0; overflow:hidden;}
+  .news-img{width:100%; display:block; aspect-ratio:1/1; object-fit:cover; background:var(--line);}
+  .news-body{padding:13px 16px;}
+  .news-date{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; font-family:'IBM Plex Mono',monospace;}
+  .news-caption{font-size:14px; line-height:1.5; margin-bottom:9px; white-space:pre-wrap;}
+  .news-link{font-size:12.5px; font-weight:600; color:var(--red); text-decoration:none; display:inline-flex; align-items:center; gap:4px;}
+
+  /* bottom nav */
+  nav.bottomnav{
+    position:fixed; bottom:0; left:0; right:0; z-index:25;
+    background:var(--paper); border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .navinner{max-width:480px; margin:0 auto; display:flex;}
+  .navbtn{
+    flex:1; border:none; background:transparent; padding:9px 4px 8px 4px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--muted);
+  }
+  .navbtn .navicon{width:22px;height:22px; position:relative;}
+  .navbtn .navlbl{font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.02em;}
+  .navbtn.active{color:var(--red);}
+  .navbtn .cross-ind{position:absolute; top:-9px; left:50%; transform:translateX(-50%); width:14px; height:14px; opacity:0;}
+  .navbtn.active .cross-ind{opacity:1;}
+  .navbtn.active .cross-ind::before,.navbtn.active .cross-ind::after{content:"";position:absolute;background:var(--red);}
+  .navbtn .cross-ind::before{left:44%;top:10%;width:12%;height:80%;}
+  .navbtn .cross-ind::after{left:10%;top:44%;width:80%;height:12%;}
+
+  /* modal sheet */
+  .overlay{
+    position:fixed; inset:0; background:rgba(34,30,27,0.5); z-index:50;
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity 0.15s ease;
+  }
+  .overlay.open{opacity:1; pointer-events:auto;}
+  .sheet{
+    background:var(--cream); width:100%; max-width:480px; border-radius:18px 18px 0 0;
+    padding:8px 20px 26px 20px; max-height:86vh; overflow-y:auto;
+    transform:translateY(16px); transition:transform 0.15s ease;
+  }
+  .overlay.open .sheet{transform:translateY(0);}
+  .sheet-handle{width:38px;height:4px;background:var(--line); border-radius:3px; margin:6px auto 14px auto;}
+  .sheet h2{font-size:19px; text-transform:uppercase; margin-bottom:2px;}
+  .sheet-actions{display:flex; gap:10px; margin-top:18px;}
+  .sheet-actions .btn{flex:1;}
+  .field-error{color:var(--red-dark); font-size:12px; margin-top:5px; display:none;}
+  .field-error.show{display:block;}
+
+  .toast{
+    position:fixed; bottom:76px; left:50%; transform:translateX(-50%) translateY(10px);
+    background:var(--ink); color:#fff; padding:9px 18px; border-radius:20px; font-size:13px; font-weight:600;
+    z-index:60; opacity:0; pointer-events:none; transition:all 0.2s ease;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .loadscreen{position:fixed; inset:0; background:var(--cream); display:flex; align-items:center; justify-content:center; z-index:100; flex-direction:column; gap:10px;}
+  .loadscreen .cross-logo{animation:pulse 1s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+  .loadscreen span{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em;}
+
+  a{color:var(--red);}
+  .link-strip{margin-top:2px;}
+
+  .session-card{text-align:center; padding:22px 16px;}
+  .session-status{font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600; margin-bottom:10px;}
+  .code-display{font-family:'IBM Plex Mono',monospace; font-size:44px; font-weight:500; letter-spacing:0.12em; color:var(--red); margin:4px 0 14px 0;}
+  .qr-box{width:150px;height:150px; margin:0 auto 14px auto; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#fff;}
+  .qr-box img{width:100%;height:100%;display:block;}
+  .qr-note{font-size:11.5px; color:var(--muted); margin-bottom:14px; line-height:1.5;}
+  .checkin-confirm{text-align:center; padding:40px 20px;}
+  .checkin-confirm .check-circle{
+    width:56px;height:56px;border-radius:50%;background:#E4EFE7;color:var(--green-dark);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px auto;
+  }
+  .code-input-big{
+    font-family:'IBM Plex Mono',monospace; font-size:26px; letter-spacing:0.2em; text-align:center;
+  }
+
+  .setup-screen{
+    position:fixed; inset:0; background:var(--cream); z-index:110; overflow-y:auto;
+    padding:28px 22px 40px 22px;
+  }
+  .setup-screen .setup-inner{max-width:440px; margin:0 auto;}
+  .setup-screen h2{font-size:22px; text-transform:uppercase; margin-bottom:6px;}
+  .setup-screen p{font-size:13.5px; line-height:1.6; color:var(--muted); margin:0 0 14px 0;}
+  .setup-step{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:10px;}
+  .setup-step-num{
+    display:inline-flex; align-items:center; justify-content:center; width:22px;height:22px; border-radius:50%;
+    background:var(--red); color:#fff; font-size:12px; font-weight:700; margin-right:8px; flex-shrink:0;
+  }
+  .setup-step h3{display:inline; font-size:15px; text-transform:none; vertical-align:middle;}
+  .setup-step p{margin:8px 0 0 30px; font-size:13px;}
+  .setup-code{
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; background:var(--cream); border:1px solid var(--line);
+    border-radius:6px; padding:8px 10px; margin:8px 0 0 30px; white-space:pre-wrap; word-break:break-all; display:block;
+  }
+</style>
+</head>
+<body>
+
+<div id="loadscreen" class="loadscreen">
+  <div class="cross-logo"></div>
+  <span>Loading club data</span>
+</div>
+
+<div id="setupScreen" class="setup-screen" style="display:none;"></div>
+
+<div id="app" style="display:none;">
+  <header>
+    <div class="brandrow">
+      <div class="cross-logo"></div>
+      <div class="brand-text">
+        <h1 id="clubNameDisplay">Red Cross Club</h1>
+        <div class="tagline">Service · Attendance · Resources</div>
+      </div>
+      <button class="edit-name-btn" data-action="open-rename" aria-label="Edit club name">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
+    </div>
+    <div class="pulse-wrap">
+      <svg viewBox="0 0 400 20" preserveAspectRatio="none"><polyline points="0,10 90,10 105,2 118,18 132,10 400,10" fill="none" stroke="#E9E1D3" stroke-width="2"/></svg>
+    </div>
+  </header>
+
+  <main id="content"></main>
+
+  <button class="fab" id="fabBtn" style="display:none;" aria-label="Add">+</button>
+
+  <nav class="bottomnav">
+    <div class="navinner">
+      <button class="navbtn" data-action="set-tab" data-tab="checkin" aria-label="Check in">
+        <div class="navicon"><div class="cross-ind"></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="7" height="7" rx="1"/><rect x="14" y="4" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM19 14h2M14 19h2M19 19h2"/></svg>
+        </div>
+        <div class="navlbl">Check in</div>
+      </button>
+      <button class="navbtn" data-action="set-tab" data-tab="attendance" aria-label="Attendance">
+        <div class="navicon"><div class="cross-ind"></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <div class="navlbl">Attendance</div>
+      </button>
+      <button class="navbtn" data-action="set-tab" data-tab="resources" aria-label="Resources">
+        <div class="navicon"><div class="cross-ind"></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </div>
+        <div class="navlbl">Resources</div>
+      </button>
+      <button class="navbtn" data-action="set-tab" data-tab="news" aria-label="News">
+        <div class="navicon"><div class="cross-ind"></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.8"/><path d="M21 15l-5-5L5 21"/></svg>
+        </div>
+        <div class="navlbl">News</div>
+      </button>
+    </div>
+  </nav>
+</div>
+
+<div id="modalRoot"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- state ---------- */
+var appData = null;
+var state = {
+  tab: 'attendance',
+  attView: 'take',
+  currentMeetingId: null,
+  resCategory: 'all',
+  checkinDone: null,
+  prefillCode: ''
+};
+/* ---------- 	 config ---------- */
+/* Paste your own Firebase project's web config here — see the in-app setup
+   screen (shown automatically until this is filled in) for step-by-step help. */
+var firebaseConfig = {
+  apiKey: "AIzaSyA8aVAvCq4QwGYMwygv6rWzVq5QACaWVVg"
+  authDomain: "redcross-club-af2a2.firebaseapp.com",
+  projectId: "redcross-club-af2a2",
+  storageBucket: "redcross-club-af2a2.firebasestorage.app",
+  messagingSenderId: "572213825044",
+  appId: "1:572213825044:web:dde92a405188c99dc1e101"
+};
+var db = null;
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(d){
+  var dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'});
+}
+function initials(name){
+  var parts = name.trim().split(/\s+/);
+  return ((parts[0]||'')[0]||'').toUpperCase() + ((parts[1]||'')[0]||'').toUpperCase();
+}
+function escapeHtml(s){
+  var d = document.createElement('div'); d.innerText = s == null ? '' : s; return d.innerHTML;
+}
+
+function defaultData(){
+  return {
+    clubName: 'Red Cross Club',
+    members: [],
+    meetings: [],
+    attendance: {},
+    deviceLocks: {},
+    links: [],
+    photos: [],
+    news: []
+  };
+}
+function ensureDefaults(){
+  if(!appData) appData = defaultData();
+  if(!appData.attendance) appData.attendance = {};
+  if(!appData.deviceLocks) appData.deviceLocks = {};
+  if(!appData.members) appData.members = [];
+  if(!appData.meetings) appData.meetings = [];
+  if(!appData.links) appData.links = [];
+  if(!appData.photos) appData.photos = [];
+  if(!appData.news) appData.news = [];
+}
+
+/* device identity, used to enforce one check-in device per person per meeting */
+function getDeviceId(){
+  try{
+    var id = window.localStorage.getItem('rc-device-id');
+    if(!id){ id = uid(); window.localStorage.setItem('rc-device-id', id); }
+    return id;
+  }catch(e){
+    if(!getDeviceId._mem) getDeviceId._mem = uid();
+    return getDeviceId._mem;
+  }
+}
+
+async function saveData(){
+  try{
+    await db.collection('club').doc('data').set(appData);
+  }catch(e){
+    showToast("Couldn't save — check your connection");
+  }
+}
+
+function showToast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(function(){ t.classList.remove('show'); }, 1800);
+}
+
+function isFirebaseConfigured(){
+  return firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf('PASTE_YOUR') !== 0;
+}
+
+function showSetupScreen(){
+  document.getElementById('loadscreen').style.display = 'none';
+  var el = document.getElementById('setupScreen');
+  el.style.display = 'block';
+  el.innerHTML =
+    '<div class="setup-inner">' +
+    '<h2>One-time setup</h2>' +
+    '<p>This app stores its data in a free Firebase project so it keeps working as a permanent, always-live app — not just inside a Claude chat. Do this once and it\'s done.</p>' +
+
+    '<div class="setup-step"><span class="setup-step-num">1</span><h3>Create a Firebase project</h3>' +
+    '<p>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noopener">console.firebase.google.com</a>, sign in with any Google account, click <b>Add project</b>, give it a name, and skip Google Analytics.</p></div>' +
+
+    '<div class="setup-step"><span class="setup-step-num">2</span><h3>Turn on Firestore</h3>' +
+    '<p>In the left menu go to <b>Build \u2192 Firestore Database \u2192 Create database</b>. Choose any region and start in <b>test mode</b>.</p></div>' +
+
+    '<div class="setup-step"><span class="setup-step-num">3</span><h3>Open the Rules tab and paste this</h3>' +
+    '<p>This keeps the database open to your club (no logins), same as how the app works today. Click <b>Publish</b> after pasting.</p>' +
+    '<span class="setup-code">rules_version = \'2\';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}</span></div>' +
+
+    '<div class="setup-step"><span class="setup-step-num">4</span><h3>Register a web app</h3>' +
+    '<p>Click the gear icon \u2192 <b>Project settings</b>, scroll to "Your apps", click the <b>&lt;/&gt;</b> web icon, give it any nickname, and skip Firebase Hosting. It shows a code block starting with <b>const firebaseConfig = {...}</b>.</p></div>' +
+
+    '<div class="setup-step"><span class="setup-step-num">5</span><h3>Paste it into this file</h3>' +
+    '<p>Open this HTML file in a text editor, find <b>firebaseConfig</b> near the top of the script, and replace the six PASTE_YOUR_...  placeholders with the matching values Firebase gave you. Save, re-upload, and reload this page.</p></div>' +
+
+    '<p style="margin-top:16px;">Heads up: with the rule above, anyone who has this file\'s config can read or write the data — fine for an internal club tool, but don\'t treat it as private or sensitive.</p>' +
+    '</div>';
+}
+
+/* ---------- init ---------- */
+(function initApp(){
+  if(!isFirebaseConfigured()){
+    showSetupScreen();
+    return;
+  }
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  }catch(e){
+    showSetupScreen();
+    return;
+  }
+
+  try{
+    var params = new URLSearchParams(location.search);
+    var codeParam = params.get('code');
+    if(codeParam){ state.tab = 'checkin'; state.prefillCode = codeParam; }
+  }catch(e){}
+
+  var firstLoad = true;
+  db.collection('club').doc('data').onSnapshot(function(doc){
+    appData = doc.exists ? doc.data() : defaultData();
+    ensureDefaults();
+    if(firstLoad){
+      firstLoad = false;
+      document.getElementById('loadscreen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      setupPWA();
+    }
+    render();
+  }, function(err){
+    if(firstLoad){
+      document.getElementById('loadscreen').style.display = 'none';
+      showToast("Can't connect — check Firestore rules / config");
+    }
+  });
+})();
+
+
+/* ---------- render dispatch ---------- */
+function render(){
+  document.getElementById('clubNameDisplay').textContent = appData.clubName || 'Red Cross Club';
+  document.querySelectorAll('.navbtn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.tab === state.tab);
+  });
+  var fab = document.getElementById('fabBtn');
+  var main = document.getElementById('content');
+
+  if(state.tab === 'checkin'){
+    fab.style.display = 'none';
+    main.innerHTML = renderCheckIn();
+  }else if(state.tab === 'attendance'){
+    fab.style.display = 'none';
+    main.innerHTML = renderAttendance();
+  }else if(state.tab === 'resources'){
+    fab.style.display = 'flex';
+    fab.dataset.action = state.resCategory==='photos' ? 'open-add-photo' : (state.resCategory==='all' ? 'open-add-resource' : 'open-add-link');
+    main.innerHTML = renderResources();
+    loadVisiblePhotos();
+  }else if(state.tab === 'news'){
+    fab.style.display = 'flex';
+    fab.dataset.action = 'open-add-news';
+    main.innerHTML = renderNews();
+  }
+}
+
+/* ---------- ATTENDANCE ---------- */
+function renderAttendance(){
+  var html = '';
+  html += '<div class="segmented">' +
+    seg('take','Session') + seg('roster','Roster') + seg('history','History') +
+    '</div>';
+
+  if(state.attView === 'take') html += renderTake();
+  else if(state.attView === 'roster') html += renderRoster();
+  else html += renderHistory();
+
+  return html;
+
+  function seg(id,label){
+    return '<button class="'+(state.attView===id?'active':'')+'" data-action="set-attview" data-view="'+id+'">'+label+'</button>';
+  }
+}
+
+function renderTake(){
+  if(appData.members.length === 0){
+    return emptyState('No members yet','Add your club members in the Roster tab before taking attendance.', 'Go to Roster', 'set-attview', 'view', 'roster');
+  }
+
+  var html = '<div class="meeting-picker">';
+  html += '<label class="field-label">Meeting</label>';
+  html += '<select id="meetingSelect" data-action="pick-meeting">';
+  html += '<option value="">Select a meeting…</option>';
+  appData.meetings.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).forEach(function(m){
+    html += '<option value="'+m.id+'" '+(state.currentMeetingId===m.id?'selected':'')+'>'+escapeHtml(m.title)+' · '+fmtDate(m.date)+'</option>';
+  });
+  html += '</select></div>';
+  html += '<button class="btn btn-ghost btn-block" data-action="open-add-meeting" style="margin-bottom:16px;">+ New meeting</button>';
+
+  var meeting = appData.meetings.find(function(m){return m.id === state.currentMeetingId;});
+  if(!meeting){
+    return html + emptyState('No meeting selected','Pick an existing meeting above or create a new one to start taking attendance.');
+  }
+
+  var html2 = '<div class="card session-card">';
+  if(meeting.active && meeting.code){
+    html2 += '<div class="session-status">Check-in is open</div>';
+    html2 += '<div class="code-display">'+meeting.code+'</div>';
+    html2 += '<div class="qr-box"><img src="'+qrUrl(meeting.code)+'" alt="QR code" onerror="this.parentElement.style.display=\'none\'"></div>';
+    html2 += '<div class="qr-note">Members open Check in, scan this or type the code, and pick their name. Stop check-in when the meeting ends so the code can\'t be reused.</div>';
+    html2 += '<button class="btn btn-ghost btn-block" data-action="stop-checkin" data-meeting="'+meeting.id+'">Stop check-in</button>';
+  }else{
+    html2 += '<div class="session-status">Check-in is closed</div>';
+    html2 += '<p style="font-size:13px;color:var(--muted);margin:0 0 14px 0;line-height:1.5;">Start check-in to generate a fresh code members enter themselves — this is what stops people marking themselves present without it.</p>';
+    html2 += '<button class="btn btn-primary btn-block" data-action="start-checkin" data-meeting="'+meeting.id+'">Start check-in</button>';
+  }
+  html2 += '</div>';
+
+  var rec = appData.attendance[meeting.id] || {};
+  var present=0, absent=0, excused=0, none=0;
+  appData.members.forEach(function(m){
+    var s = rec[m.id];
+    if(s==='present') present++; else if(s==='absent') absent++; else if(s==='excused') excused++; else none++;
+  });
+
+  html2 += '<div class="section-title">Roster for this meeting</div>';
+  html2 += '<div class="stat-strip">' +
+    statBox(present,'Present') + statBox(absent,'Absent') + statBox(excused,'Excused') + statBox(none,'Unmarked') +
+    '</div>';
+
+  html2 += '<div class="card" style="padding:6px 16px;">';
+  appData.members.forEach(function(m){
+    var s = rec[m.id] || 'none';
+    html2 += '<div class="row row-between member-row">' +
+      '<div class="row"><div class="avatar">'+initials(m.name)+'</div>' +
+      '<div><div class="mname">'+escapeHtml(m.name)+'</div></div></div>' +
+      '<button class="status-pill status-'+s+'" data-action="cycle-status" data-meeting="'+meeting.id+'" data-member="'+m.id+'">'+statusLabel(s)+'</button>' +
+      '</div>';
+  });
+  html2 += '</div>';
+
+  return html + html2;
+}
+
+function statBox(n,lbl){
+  return '<div class="stat-box"><div class="stat-num mono">'+n+'</div><div class="stat-lbl">'+lbl+'</div></div>';
+}
+function statusLabel(s){
+  return s==='present'?'Present':s==='absent'?'Absent':s==='excused'?'Excused':'Mark';
+}
+
+function renderRoster(){
+  var html = '<button class="btn btn-primary btn-block" data-action="open-add-member" style="margin-bottom:14px;">+ Add member</button>';
+  if(appData.members.length === 0){
+    return html + emptyState('No members yet','Add everyone in your club so you can track their attendance at each meeting.');
+  }
+  html += '<div class="card" style="padding:6px 16px;">';
+  appData.members.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).forEach(function(m){
+    var pct = memberPct(m.id);
+    html += '<div class="row row-between member-row">' +
+      '<div class="row"><div class="avatar">'+initials(m.name)+'</div>' +
+      '<div><div class="mname">'+escapeHtml(m.name)+'</div><div class="msub mono">'+pct+'% attendance</div></div></div>' +
+      '<button class="icon-btn" data-action="delete-member" data-member="'+m.id+'" aria-label="Remove member">' +
+      '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>' +
+      '</button></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function memberPct(memberId){
+  var total=0, present=0;
+  appData.meetings.forEach(function(m){
+    var rec = appData.attendance[m.id];
+    if(rec && rec[memberId]){
+      total++;
+      if(rec[memberId]==='present') present++;
+    }
+  });
+  if(total===0) return 0;
+  return Math.round(present/total*100);
+}
+
+function renderHistory(){
+  if(appData.members.length===0 && appData.meetings.length===0){
+    return emptyState('Nothing to show yet','Once you add members and take attendance at a meeting, stats will appear here.');
+  }
+  var html = '';
+  if(appData.members.length){
+    html += '<div class="section-title">By member</div><div class="card" style="padding:6px 16px;">';
+    appData.members.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).forEach(function(m){
+      var pct = memberPct(m.id);
+      html += '<div class="member-row">' +
+        '<div class="row-between"><div class="mname">'+escapeHtml(m.name)+'</div><div class="msub mono">'+pct+'%</div></div>' +
+        '<div class="bar-bg"><div class="bar-fill" style="width:'+pct+'%;"></div></div>' +
+        '</div>';
+    });
+    html += '</div>';
+  }
+  if(appData.meetings.length){
+    html += '<div class="section-title">Meeting log</div>';
+    appData.meetings.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).forEach(function(m){
+      var rec = appData.attendance[m.id] || {};
+      var present=0, absent=0, excused=0;
+      Object.keys(rec).forEach(function(k){
+        if(rec[k]==='present') present++; else if(rec[k]==='absent') absent++; else if(rec[k]==='excused') excused++;
+      });
+      html += '<div class="card row-between">' +
+        '<div><div class="mname">'+escapeHtml(m.title)+'</div><div class="msub mono">'+fmtDate(m.date)+'</div></div>' +
+        '<div class="msub mono" style="text-align:right;">'+present+'P · '+absent+'A · '+excused+'E</div>' +
+        '</div>';
+    });
+  }
+  return html;
+}
+
+/* ---------- CHECK IN (member self service) ---------- */
+function genCode(){
+  return String(Math.floor(1000 + Math.random()*9000));
+}
+function qrUrl(code){
+  var target = location.href.split('?')[0] + '?code=' + code;
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=6&data=' + encodeURIComponent(target);
+}
+
+function renderCheckIn(){
+  if(state.checkinDone){
+    var m = appData.members.find(function(x){return x.id===state.checkinDone.memberId;});
+    return '<div class="checkin-confirm">' +
+      '<div class="check-circle"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>' +
+      '<h3 style="font-size:19px;">You\'re checked in'+(m?', '+escapeHtml(m.name.split(' ')[0]):'')+'</h3>' +
+      '<p style="font-size:13px;color:var(--muted);margin:4px 0 16px 0;">Marked present for '+escapeHtml(state.checkinDone.meetingTitle)+'.</p>' +
+      '<button class="btn btn-ghost" data-action="checkin-again">Check in someone else</button>' +
+      '</div>';
+  }
+
+  var meeting = appData.meetings.find(function(m){return m.active && m.code;});
+  if(appData.members.length===0){
+    return emptyState('No roster yet','Ask your leader to add members before check-in can be used.');
+  }
+  if(!meeting){
+    return emptyState('Check-in is closed','Your leader hasn\'t started check-in for a meeting yet. Ask them to open it from the Attendance tab.');
+  }
+
+  var codeFromUrl = state.prefillCode || '';
+  var opts = '<option value="">Select your name…</option>' + appData.members.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(m){
+    return '<option value="'+m.id+'">'+escapeHtml(m.name)+'</option>';
+  }).join('');
+
+  return '<div class="card">' +
+    '<div class="section-title" style="margin-top:0;">'+escapeHtml(meeting.title)+' · '+fmtDate(meeting.date)+'</div>' +
+    '<label class="field-label">Your name</label>' +
+    '<select id="ci-member">'+opts+'</select>' +
+    '<div class="field-error" id="ci-member-err">Pick your name first.</div>' +
+    '<label class="field-label">Code from your leader</label>' +
+    '<input id="ci-code" class="code-input-big" type="text" inputmode="numeric" maxlength="4" placeholder="0000" value="'+escapeHtml(codeFromUrl)+'">' +
+    '<div class="field-error" id="ci-code-err">That code doesn\'t match. Check with your leader.</div>' +
+    '<div class="field-error" id="ci-device-err">This device already checked someone else in for this meeting. Each phone can check in one person only — ask your leader if this is a mistake.</div>' +
+    '<button class="btn btn-primary btn-block" data-action="do-checkin" data-meeting="'+meeting.id+'" style="margin-top:16px;">Check in</button>' +
+    '</div>';
+}
+
+/* ---------- RESOURCES ---------- */
+var LINK_CATEGORIES = [
+  {id:'forms', label:'Forms', icon:'F'},
+  {id:'slides', label:'Slides', icon:'S'},
+  {id:'docs', label:'Docs', icon:'D'},
+  {id:'other', label:'Other', icon:'\u2022'}
+];
+var CHIP_LIST = [
+  {id:'forms', label:'Forms'},
+  {id:'photos', label:'Photos'},
+  {id:'slides', label:'Slides'},
+  {id:'docs', label:'Docs'},
+  {id:'other', label:'Other'}
+];
+var photoCache = {};
+
+function renderResources(){
+  var html = '<div class="chip-row">';
+  html += '<button class="chip '+(state.resCategory==='all'?'active':'')+'" data-action="set-rescat" data-cat="all">All</button>';
+  CHIP_LIST.forEach(function(c){
+    html += '<button class="chip '+(state.resCategory===c.id?'active':'')+'" data-action="set-rescat" data-cat="'+c.id+'">'+c.label+'</button>';
+  });
+  html += '</div>';
+
+  var showPhotos = state.resCategory === 'all' || state.resCategory === 'photos';
+  var showLinks = state.resCategory !== 'photos';
+
+  if(appData.links.length === 0 && appData.photos.length === 0){
+    html += emptyState('Nothing here yet','Upload event photos or add your Google Form, Slides, and Docs links so the whole club can find them in one place.', 'Upload a photo', 'open-add-photo');
+    return html;
+  }
+
+  var body = '';
+
+  if(showPhotos && appData.photos.length){
+    body += '<div class="section-title" style="margin-top:0;">Event photos</div>';
+    body += '<div class="photo-grid">';
+    appData.photos.slice().sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);}).forEach(function(p){
+      body += '<a class="photo-tile" href="javascript:void(0)" data-action="open-photo" data-photoid="'+p.id+'">' +
+        '<img class="photo-tile-img loading" id="pimg-'+p.id+'" alt="">' +
+        '<button class="icon-btn photo-del" data-action="delete-photo" data-photo="'+p.id+'" aria-label="Delete photo" onclick="event.stopPropagation();event.preventDefault();">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
+        (p.caption ? '<div class="photo-tile-cap">'+escapeHtml(p.caption)+'</div>' : '') +
+        '</a>';
+    });
+    body += '</div>';
+  }
+  if(showPhotos && appData.photos.length===0 && state.resCategory==='photos'){
+    body += emptyState('No event photos yet','Members can upload photos from meetings, service days, and events right from their phone.', 'Upload a photo', 'open-add-photo');
+  }
+
+  if(showLinks){
+    var links = appData.links.filter(function(l){ return state.resCategory==='all' || l.category===state.resCategory; });
+    if(links.length){
+      if(state.resCategory==='all' && appData.photos.length) body += '<div class="section-title">Links</div>';
+      links.slice().sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);}).forEach(function(l){
+        var cat = LINK_CATEGORIES.find(function(c){return c.id===l.category;}) || LINK_CATEGORIES[3];
+        body += '<div class="card res-card cat-'+cat.id+'">' +
+          '<div class="res-icon">'+cat.icon+'</div>' +
+          '<div style="flex:1;min-width:0;">' +
+          '<div class="res-title">'+escapeHtml(l.title)+'</div>' +
+          (l.note ? '<div class="res-note">'+escapeHtml(l.note)+'</div>' : '') +
+          '<div class="res-cat-lbl">'+cat.label+'</div>' +
+          '<div class="link-strip"><a href="'+escapeHtml(l.url)+'" target="_blank" rel="noopener" class="news-link">Open link \u2197</a></div>' +
+          '</div>' +
+          '<button class="icon-btn" data-action="delete-link" data-link="'+l.id+'" aria-label="Delete link">' +
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>' +
+          '</button>' +
+          '</div>';
+      });
+    }else if(state.resCategory!=='all' && state.resCategory!=='photos'){
+      body += emptyState('No links in this category','Try another category, or add a new link here.');
+    }
+  }
+
+  if(!body) body = emptyState('No links in this category','Try another category, or add a new link here.');
+  return html + body;
+}
+
+function loadVisiblePhotos(){
+  appData.photos.forEach(function(p){
+    var img = document.getElementById('pimg-'+p.id);
+    if(!img) return;
+    if(photoCache[p.id]){
+      img.src = photoCache[p.id];
+      img.classList.remove('loading');
+      return;
+    }
+    db.collection('photos').doc(p.id).get().then(function(doc){
+      var data = doc.exists ? doc.data() : null;
+      if(data && data.img){
+        photoCache[p.id] = data.img;
+        var el = document.getElementById('pimg-'+p.id);
+        if(el){ el.src = data.img; el.classList.remove('loading'); }
+      }
+    }).catch(function(){
+      var el = document.getElementById('pimg-'+p.id);
+      if(el) el.classList.add('load-error');
+    });
+  });
+}
+
+/* ---------- NEWS ---------- */
+function renderNews(){
+  if(appData.news.length === 0){
+    return emptyState('No posts yet','Paste in Instagram posts from your Red Cross community — donation drives, event recaps, and more.', 'Add a post', 'open-add-news');
+  }
+  var html = '';
+  appData.news.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).forEach(function(n){
+    html += '<div class="card news-card">';
+    if(n.image) html += '<img class="news-img" src="'+escapeHtml(n.image)+'" alt="" onerror="this.style.display=\'none\'">';
+    html += '<div class="news-body">';
+    html += '<div class="row-between"><div class="news-date">'+fmtDate(n.date)+'</div>' +
+      '<button class="icon-btn" data-action="delete-news" data-news="'+n.id+'" aria-label="Delete post">' +
+      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>' +
+      '</button></div>';
+    if(n.caption) html += '<div class="news-caption">'+escapeHtml(n.caption)+'</div>';
+    if(n.link) html += '<a href="'+escapeHtml(n.link)+'" target="_blank" rel="noopener" class="news-link">View on Instagram ↗</a>';
+    html += '</div></div>';
+  });
+  return html;
+}
+
+/* ---------- shared empty state ---------- */
+function emptyState(title, body, btnLabel, action, dataKey, dataVal){
+  var btn = '';
+  if(btnLabel){
+    btn = '<button class="btn btn-primary" data-action="'+action+'"' + (dataKey ? ' data-'+dataKey+'="'+dataVal+'"' : '') + '>'+btnLabel+'</button>';
+  }
+  return '<div class="empty"><div class="plus-badge">+</div><h3>'+title+'</h3><p>'+body+'</p>'+btn+'</div>';
+}
+
+/* ---------- modals ---------- */
+function openModal(html){
+  var root = document.getElementById('modalRoot');
+  root.innerHTML = '<div class="overlay" id="overlayEl"><div class="sheet">' +
+    '<div class="sheet-handle"></div>' + html + '</div></div>';
+  requestAnimationFrame(function(){ document.getElementById('overlayEl').classList.add('open'); });
+  document.getElementById('overlayEl').addEventListener('click', function(e){
+    if(e.target.id === 'overlayEl') closeModal();
+  });
+}
+function closeModal(){
+  var ov = document.getElementById('overlayEl');
+  if(!ov) return;
+  ov.classList.remove('open');
+  setTimeout(function(){ document.getElementById('modalRoot').innerHTML=''; }, 150);
+}
+
+function modalAddMember(){
+  openModal(
+    '<h2>Add member</h2>' +
+    '<label class="field-label">Name</label>' +
+    '<input id="f-name" type="text" placeholder="Jordan Alvarez" autofocus>' +
+    '<div class="field-error" id="f-name-err">Enter a name first.</div>' +
+    '<div class="sheet-actions">' +
+      '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
+      '<button class="btn btn-primary" data-action="save-member">Add member</button>' +
+    '</div>'
+  );
+}
+function modalAddMeeting(){
+  openModal(
+    '<h2>New meeting</h2>' +
+    '<label class="field-label">Title</label>' +
+    '<input id="f-title" type="text" placeholder="Weekly general meeting">' +
+    '<div class="field-error" id="f-title-err">Enter a title first.</div>' +
+    '<label class="field-label">Date</label>' +
+    '<input id="f-date" type="date" value="'+todayStr()+'">' +
+    '<div class="sheet-actions">' +
+      '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
+      '<button class="btn btn-primary" data-action="save-meeting">Create</button>' +
+    '</div>'
+  );
+}
+function modalAddLink(){
+  var preselect = LINK_CATEGORIES.some(function(c){return c.id===state.resCategory;}) ? state.resCategory : 'forms';
+  var opts = LINK_CATEGORIES.map(function(c){return '<option value="'+c.id+'" '+(c.id===preselect?'selected':'')+'>'+c.label+'</option>';}).join('');
+  openModal(
+    '<h2>Add resource link</h2>' +
+    '<label class="field-label">Title</label>' +
+    '<input id="f-ltitle" type="text" placeholder="Volunteer sign-up form">' +
+    '<div class="field-error" id="f-ltitle-err">Enter a title first.</div>' +
+    '<label class="field-label">Link</label>' +
+    '<input id="f-lurl" type="url" placeholder="https://forms.google.com/...">' +
+    '<div class="field-error" id="f-lurl-err">Enter a valid link (starting with http).</div>' +
+    '<label class="field-label">Category</label>' +
+    '<select id="f-lcat">'+opts+'</select>' +
+    '<label class="field-label">Note (optional)</label>' +
+    '<input id="f-lnote" type="text" placeholder="Fill out before Friday">' +
+    '<div class="sheet-actions">' +
+      '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
+      '<button class="btn btn-primary" data-action="save-link">Save link</button>' +
+    '</div>'
+  );
+}
+function modalChooseResourceType(){
+  openModal(
+    '<h2>Add to resources</h2>' +
+    '<div class="sheet-actions" style="margin-top:14px;flex-direction:column;">' +
+      '<button class="btn btn-primary btn-block" data-action="open-add-photo">Upload a photo</button>' +
+      '<button class="btn btn-ghost btn-block" data-action="open-add-link">Add a link</button>' +
+    '</div>'
+  );
+}
+function modalAddPhoto(){
+  openModal(
+    '<h2>Upload photo</h2>' +
+    '<label class="field-label">Photo</label>' +
+    '<label class="file-drop" id="fileDropLabel">Tap to choose a photo<br>from your camera roll or camera' +
+    '<input id="f-pfile" type="file" accept="image/*" style="display:none;">' +
+    '</label>' +
+    '<img id="f-ppreview" class="upload-preview">' +
+    '<div class="field-error" id="f-pfile-err">Choose a photo first.</div>' +
+    '<label class="field-label">Caption (optional)</label>' +
+    '<input id="f-pcaption" type="text" placeholder="Beach cleanup day">' +
+    '<label class="field-label">Uploaded by (optional)</label>' +
+    '<input id="f-puploader" type="text" placeholder="Your name">' +
+    '<div class="sheet-actions">' +
+      '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
+      '<button class="btn btn-primary" id="f-psubmit" data-action="save-photo">Upload</button>' +
+    '</div>'
+  );
+  document.getElementById('fileDropLabel').addEventListener('click', function(){
+    document.getElementById('f-pfile').click();
+  });
+  document.getElementById('f-pfile').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    document.getElementById('f-pfile-err').classList.remove('show');
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var img = document.getElementById('f-ppreview');
+      img.src = ev.target.result;
+      img.classList.add('show');
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function modalAddNews(){
+  openModal(
+    '<h2>Add news post</h2>' +
+    '<label class="field-label">Caption</label>' +
+    '<textarea id="f-ncaption" rows="3" placeholder="Blood donation drive this Saturday — sign up in the link below."></textarea>' +
+    '<div class="field-error" id="f-ncaption-err">Enter a caption first.</div>' +
+    '<label class="field-label">Image URL (optional)</label>' +
+    '<input id="f-nimage" type="url" placeholder="https://...">' +
+    '<label class="field-label">Instagram post link (optional)</label>' +
+    '<input id="f-nlink" type="url" placeholder="https://instagram.com/p/...">' +
+    '<label class="field-label">Date</label>' +
+    '<input id="f-ndate" type="date" value="'+todayStr()+'">' +
+    '<div class="sheet-actions">' +
+      '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
+      '<button class="btn btn-primary" data-action="save-news">Post</button>' +
+    '</div>'
+  );
+}
+function modalRename(){
+  openModal(
+    '<h2>Club name</h2>' +
+    '<label class="field-label">Name</label>' +
+    '<input id="f-clubname" type="text" value="'+escapeHtml(appData.clubName||'Red Cross Club')+'">' +
+    '<div class="sheet-actions">' +
+      '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
+      '<button class="btn btn-primary" data-action="save-clubname">Save</button>' +
+    '</div>'
+  );
+}
+function modalConfirm(title, body, onConfirmAction, onConfirmData){
+  openModal(
+    '<h2>'+title+'</h2>' +
+    '<p style="font-size:14px;color:var(--muted);margin:8px 0 0 0;line-height:1.5;">'+body+'</p>' +
+    '<div class="sheet-actions">' +
+      '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
+      '<button class="btn btn-primary" data-action="'+onConfirmAction+'" data-confirmid="'+onConfirmData+'">Delete</button>' +
+    '</div>'
+  );
+}
+
+/* ---------- action handlers ---------- */
+var handlers = {
+  'set-tab': function(el){ state.tab = el.dataset.tab; render(); },
+  'set-attview': function(el){ state.attView = el.dataset.view; render(); },
+  'set-rescat': function(el){ state.resCategory = el.dataset.cat; render(); },
+  'pick-meeting': function(el){ state.currentMeetingId = el.value || null; render(); },
+  'open-add-member': function(){ modalAddMember(); },
+  'open-add-meeting': function(){ modalAddMeeting(); },
+  'open-add-link': function(){ closeModal(); modalAddLink(); },
+  'open-add-photo': function(){ closeModal(); modalAddPhoto(); },
+  'open-add-resource': function(){ modalChooseResourceType(); },
+  'open-add-news': function(){ modalAddNews(); },
+  'open-rename': function(){ modalRename(); },
+  'open-photo': async function(el){
+    var id = el.dataset.photoid;
+    var dataUrl = photoCache[id];
+    if(!dataUrl){
+      try{
+        var doc = await db.collection('photos').doc(id).get();
+        var data = doc.exists ? doc.data() : null;
+        dataUrl = data && data.img;
+        if(dataUrl) photoCache[id] = dataUrl;
+      }catch(e){}
+    }
+    if(dataUrl) window.open(dataUrl, '_blank');
+  },
+  'close-modal': function(){ closeModal(); },
+
+  'save-member': async function(){
+    var input = document.getElementById('f-name');
+    var val = input.value.trim();
+    if(!val){ document.getElementById('f-name-err').classList.add('show'); return; }
+    appData.members.push({id:uid(), name:val});
+    await saveData();
+    closeModal(); render(); showToast('Member added');
+  },
+  'save-meeting': async function(){
+    var t = document.getElementById('f-title').value.trim();
+    var d = document.getElementById('f-date').value;
+    if(!t){ document.getElementById('f-title-err').classList.add('show'); return; }
+    if(!d) d = todayStr();
+    var m = {id:uid(), title:t, date:d, code:null, active:false};
+    appData.meetings.push(m);
+    appData.attendance[m.id] = {};
+    state.currentMeetingId = m.id;
+    await saveData();
+    closeModal(); render(); showToast('Meeting created');
+  },
+  'save-link': async function(){
+    var t = document.getElementById('f-ltitle').value.trim();
+    var u = document.getElementById('f-lurl').value.trim();
+    var cat = document.getElementById('f-lcat').value;
+    var note = document.getElementById('f-lnote').value.trim();
+    var ok = true;
+    if(!t){ document.getElementById('f-ltitle-err').classList.add('show'); ok=false; } else { document.getElementById('f-ltitle-err').classList.remove('show'); }
+    if(!/^https?:\/\//i.test(u)){ document.getElementById('f-lurl-err').classList.add('show'); ok=false; } else { document.getElementById('f-lurl-err').classList.remove('show'); }
+    if(!ok) return;
+    appData.links.push({id:uid(), title:t, url:u, category:cat, note:note, createdAt:Date.now()});
+    await saveData();
+    closeModal(); render(); showToast('Link added');
+  },
+  'save-photo': async function(){
+    var fileInput = document.getElementById('f-pfile');
+    var file = fileInput.files[0];
+    if(!file){ document.getElementById('f-pfile-err').classList.add('show'); return; }
+    var caption = document.getElementById('f-pcaption').value.trim();
+    var uploader = document.getElementById('f-puploader').value.trim();
+    var btn = document.getElementById('f-psubmit');
+    btn.disabled = true; btn.textContent = 'Uploading…';
+    try{
+      var dataUrl = await compressImageUnderLimit(file);
+      var id = uid();
+      await db.collection('photos').doc(id).set({img: dataUrl, createdAt: Date.now()});
+      appData.photos.push({id:id, caption:caption, uploader:uploader, createdAt:Date.now()});
+      await saveData();
+      photoCache[id] = dataUrl;
+      closeModal(); render(); showToast('Photo uploaded');
+    }catch(e){
+      btn.disabled = false; btn.textContent = 'Upload';
+      showToast("Couldn't upload — try a smaller photo");
+    }
+  },
+  'delete-photo': function(el){
+    modalConfirm('Delete photo?', 'This removes it from the album for everyone in the club.', 'confirm-delete-photo', el.dataset.photo);
+  },
+  'confirm-delete-photo': async function(el){
+    var id = el.dataset.confirmid;
+    appData.photos = appData.photos.filter(function(p){return p.id!==id;});
+    delete photoCache[id];
+    try{ await db.collection('photos').doc(id).delete(); }catch(e){}
+    await saveData();
+    closeModal(); render(); showToast('Photo deleted');
+  },
+  'save-news': async function(){
+    var cap = document.getElementById('f-ncaption').value.trim();
+    var img = document.getElementById('f-nimage').value.trim();
+    var link = document.getElementById('f-nlink').value.trim();
+    var date = document.getElementById('f-ndate').value || todayStr();
+    if(!cap){ document.getElementById('f-ncaption-err').classList.add('show'); return; }
+    appData.news.push({id:uid(), caption:cap, image:img, link:link, date:date});
+    await saveData();
+    closeModal(); render(); showToast('Post added');
+  },
+  'save-clubname': async function(){
+    var v = document.getElementById('f-clubname').value.trim();
+    appData.clubName = v || 'Red Cross Club';
+    await saveData();
+    closeModal(); render();
+  },
+  'cycle-status': async function(el){
+    var meetingId = el.dataset.meeting, memberId = el.dataset.member;
+    var rec = appData.attendance[meetingId] || (appData.attendance[meetingId] = {});
+    var cur = rec[memberId] || 'none';
+    var next = cur==='none' ? 'present' : cur==='present' ? 'absent' : cur==='absent' ? 'excused' : 'present';
+    rec[memberId] = next;
+    await saveData();
+    render();
+  },
+  'start-checkin': async function(el){
+    var meeting = appData.meetings.find(function(m){return m.id===el.dataset.meeting;});
+    if(!meeting) return;
+    appData.meetings.forEach(function(m){ m.active = false; });
+    meeting.code = genCode();
+    meeting.active = true;
+    await saveData();
+    render(); showToast('Check-in open — code '+meeting.code);
+  },
+  'stop-checkin': async function(el){
+    var meeting = appData.meetings.find(function(m){return m.id===el.dataset.meeting;});
+    if(!meeting) return;
+    meeting.active = false;
+    await saveData();
+    render(); showToast('Check-in closed');
+  },
+  'do-checkin': async function(el){
+    var meetingId = el.dataset.meeting;
+    var meeting = appData.meetings.find(function(m){return m.id===meetingId;});
+    var memberSel = document.getElementById('ci-member');
+    var codeInput = document.getElementById('ci-code');
+    var memberId = memberSel.value;
+    var code = codeInput.value.trim();
+    var ok = true;
+    if(!memberId){ document.getElementById('ci-member-err').classList.add('show'); ok=false; } else { document.getElementById('ci-member-err').classList.remove('show'); }
+    if(!meeting || !meeting.active || code !== meeting.code){ document.getElementById('ci-code-err').classList.add('show'); ok=false; } else { document.getElementById('ci-code-err').classList.remove('show'); }
+    if(!ok) return;
+
+    var deviceId = getDeviceId();
+    var locks = appData.deviceLocks[meetingId] || (appData.deviceLocks[meetingId] = {});
+    var lockedMember = locks[deviceId];
+    if(lockedMember && lockedMember !== memberId){
+      document.getElementById('ci-device-err').classList.add('show');
+      return;
+    }
+    document.getElementById('ci-device-err').classList.remove('show');
+    locks[deviceId] = memberId;
+
+    var rec = appData.attendance[meetingId] || (appData.attendance[meetingId] = {});
+    rec[memberId] = 'present';
+    await saveData();
+    state.checkinDone = {memberId:memberId, meetingTitle:meeting.title};
+    render();
+  },
+  'checkin-again': function(){
+    state.checkinDone = null;
+    state.prefillCode = '';
+    render();
+  },
+  'delete-member': function(el){
+    modalConfirm('Remove member?', 'This removes them from the roster and their attendance history. This can\'t be undone.', 'confirm-delete-member', el.dataset.member);
+  },
+  'confirm-delete-member': async function(el){
+    var id = el.dataset.confirmid;
+    appData.members = appData.members.filter(function(m){return m.id!==id;});
+    Object.keys(appData.attendance).forEach(function(mid){ delete appData.attendance[mid][id]; });
+    await saveData();
+    closeModal(); render(); showToast('Member removed');
+  },
+  'delete-link': function(el){
+    modalConfirm('Delete link?', 'This removes it from Resources for everyone in the club.', 'confirm-delete-link', el.dataset.link);
+  },
+  'confirm-delete-link': async function(el){
+    var id = el.dataset.confirmid;
+    appData.links = appData.links.filter(function(l){return l.id!==id;});
+    await saveData();
+    closeModal(); render(); showToast('Link deleted');
+  },
+  'delete-news': function(el){
+    modalConfirm('Delete post?', 'This removes it from the News feed for everyone.', 'confirm-delete-news', el.dataset.news);
+  },
+  'confirm-delete-news': async function(el){
+    var id = el.dataset.confirmid;
+    appData.news = appData.news.filter(function(n){return n.id!==id;});
+    await saveData();
+    closeModal(); render(); showToast('Post deleted');
+  }
+};
+
+document.addEventListener('click', function(e){
+  var el = e.target.closest('[data-action]');
+  if(!el) return;
+  var fn = handlers[el.dataset.action];
+  if(fn) fn(el);
+});
+document.addEventListener('change', function(e){
+  if(e.target.id === 'meetingSelect'){
+    handlers['pick-meeting'](e.target);
+  }
+});
+document.getElementById('fabBtn').addEventListener('click', function(e){
+  var fn = handlers[e.currentTarget.dataset.action];
+  if(fn) fn(e.currentTarget);
+});
+
+/* ---------- image compression for photo uploads ---------- */
+function compressImage(file, maxDim, quality){
+  return new Promise(function(resolve, reject){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var w = img.width, h = img.height;
+        var scale = Math.min(1, maxDim / Math.max(w, h));
+        var cw = Math.max(1, Math.round(w * scale));
+        var ch = Math.max(1, Math.round(h * scale));
+        var canvas = document.createElement('canvas');
+        canvas.width = cw; canvas.height = ch;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, cw, ch);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = function(){ reject(new Error('bad image')); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function(){ reject(new Error('read failed')); };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* Firestore documents cap at ~1MiB; keep well under that with margin for
+   the other fields, retrying smaller/lower quality if needed. */
+async function compressImageUnderLimit(file){
+  var attempts = [
+    {maxDim:1200, quality:0.72},
+    {maxDim:1000, quality:0.6},
+    {maxDim:800,  quality:0.5},
+    {maxDim:600,  quality:0.4}
+  ];
+  var byteLimit = 700000; // ~700KB raw, comfortably under the 1MiB doc cap once encoded
+  var last = null;
+  for(var i=0; i<attempts.length; i++){
+    last = await compressImage(file, attempts[i].maxDim, attempts[i].quality);
+    if(last.length * 0.75 < byteLimit) return last; // base64 is ~4/3 the raw size
+  }
+  return last;
+}
+
+/* ---------- PWA install icon + manifest ---------- */
+function makeIconDataUrl(size){
+  var c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  var ctx = c.getContext('2d');
+  ctx.fillStyle = '#C8102E';
+  ctx.fillRect(0,0,size,size);
+  ctx.fillStyle = '#FFFFFF';
+  var barW = size*0.16;
+  ctx.fillRect(size/2 - barW/2, size*0.2, barW, size*0.6);
+  ctx.fillRect(size*0.2, size/2 - barW/2, size*0.6, barW);
+  return c.toDataURL('image/png');
+}
+
+function setupPWA(){
+  try{
+    var icon180 = makeIconDataUrl(180);
+    var icon192 = makeIconDataUrl(192);
+    var icon512 = makeIconDataUrl(512);
+
+    var appleIcon = document.createElement('link');
+    appleIcon.rel = 'apple-touch-icon';
+    appleIcon.href = icon180;
+    document.head.appendChild(appleIcon);
+
+    var favicon = document.createElement('link');
+    favicon.rel = 'icon';
+    favicon.href = icon192;
+    document.head.appendChild(favicon);
+
+    var manifest = {
+      name: (appData.clubName || 'Red Cross Club'),
+      short_name: (appData.clubName || 'RC Club').slice(0,12),
+      start_url: location.pathname + location.search,
+      display: 'standalone',
+      orientation: 'portrait',
+      background_color: '#FBF7EF',
+      theme_color: '#C8102E',
+      icons: [
+        {src: icon192, sizes: '192x192', type: 'image/png'},
+        {src: icon512, sizes: '512x512', type: 'image/png'}
+      ]
+    };
+    var blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    var manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = URL.createObjectURL(blob);
+    document.head.appendChild(manifestLink);
+  }catch(e){}
+}
+</script>
+</body>
+</html>
