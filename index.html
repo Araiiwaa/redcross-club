@@ -402,7 +402,7 @@ var state = {
 /* Paste your own Firebase project's web config here — see the in-app setup
    screen (shown automatically until this is filled in) for step-by-step help. */
 
-  const firebaseConfig = {
+  var firebaseConfig = {
   apiKey: "AIzaSyA8aVAvCq4QwGYMwygv6rWzVq5QACaWVVg",
   authDomain: "redcross-club-af2a2.firebaseapp.com",
   projectId: "redcross-club-af2a2",
@@ -604,8 +604,6 @@ function renderAttendance(){
 function renderTake(){
   if(appData.members.length === 0){
     return emptyState('No members yet','Add your club members in the Roster tab before taking attendance.', 'Go to Roster', 'set-attview', 'view', 'roster');
-    var dis = isAdmin ? '' : 'disabled style="pointer-events:none; opacity:0.8;"';
-    html2 += '<button class="status-pill status-'+s+'" '+dis+' data-action="cycle-status"...';
   }
 
   var html = '<div class="meeting-picker">';
@@ -616,7 +614,9 @@ function renderTake(){
     html += '<option value="'+m.id+'" '+(state.currentMeetingId===m.id?'selected':'')+'>'+escapeHtml(m.title)+' · '+fmtDate(m.date)+'</option>';
   });
   html += '</select></div>';
+  if(isAdmin) {
   html += '<button class="btn btn-ghost btn-block" data-action="open-add-meeting" style="margin-bottom:16px;">+ New meeting</button>';
+  }
 
   var meeting = appData.meetings.find(function(m){return m.id === state.currentMeetingId;});
   if(!meeting){
@@ -649,13 +649,14 @@ function renderTake(){
     statBox(present,'Present') + statBox(absent,'Absent') + statBox(excused,'Excused') + statBox(none,'Unmarked') +
     '</div>';
 
+  var dis = isAdmin ? '' : 'disabled style="pointer-events:none; opacity:0.8;"';
   html2 += '<div class="card" style="padding:6px 16px;">';
   appData.members.forEach(function(m){
     var s = rec[m.id] || 'none';
     html2 += '<div class="row row-between member-row">' +
       '<div class="row"><div class="avatar">'+initials(m.name)+'</div>' +
       '<div><div class="mname">'+escapeHtml(m.name)+'</div></div></div>' +
-      '<button class="status-pill status-'+s+'" data-action="cycle-status" data-meeting="'+meeting.id+'" data-member="'+m.id+'">'+statusLabel(s)+'</button>' +
+      '<button class="status-pill status-'+s+'" '+dis+' data-action="cycle-status" data-meeting="'+meeting.id+'" data-member="'+m.id+'">'+statusLabel(s)+'</button>' +
       '</div>';
   });
   html2 += '</div>';
@@ -681,7 +682,7 @@ function renderRoster(){
     html += '<div class="row row-between member-row">' +
       '<div class="row"><div class="avatar">'+initials(m.name)+'</div>' +
       '<div><div class="mname">'+escapeHtml(m.name)+'</div><div class="msub mono">'+pct+'% attendance</div></div></div>' +
-      '<button class="icon-btn" data-action="delete-member" data-member="'+m.id+'" aria-label="Remove member">' +
+      (isAdmin ? '<button class="icon-btn" data-action="delete-member" data-member="'+m.id+'" aria-label="Remove member"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>' : '') +
       '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>' +
       '</button></div>';
   });
