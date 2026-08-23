@@ -397,6 +397,7 @@ var state = {
   checkinDone: null,
   prefillCode: ''
 };
+  var isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
 /* ---------- Firebase config ---------- */
 /* Paste your own Firebase project's web config here — see the in-app setup
    screen (shown automatically until this is filled in) for step-by-step help. */
@@ -554,6 +555,14 @@ function render(){
   document.getElementById('clubNameDisplay').textContent = appData.clubName || 'Red Cross Club';
   document.querySelectorAll('.navbtn').forEach(function(b){
     b.classList.toggle('active', b.dataset.tab === state.tab);
+  });
+  var editBtn = document.querySelector('.edit-name-btn');[cite: 1]
+  if (editBtn) {
+    editBtn.style.display = isAdmin ? 'flex' : 'none';
+  }
+
+  document.querySelectorAll('.navbtn').forEach(function(b){[cite: 1]
+    b.classList.toggle('active', b.dataset.tab === state.tab);[cite: 1]
   });
   var fab = document.getElementById('fabBtn');
   var main = document.getElementById('content');
