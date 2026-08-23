@@ -622,10 +622,13 @@ function renderTake(){
   if(isAdmin) {
   html += '<button class="btn btn-ghost btn-block" data-action="open-add-meeting" style="margin-bottom:16px;">+ New meeting</button>';
   }
-
+  
   var meeting = appData.meetings.find(function(m){return m.id === state.currentMeetingId;});
   if(!meeting){
     return html + emptyState('No meeting selected','Pick an existing meeting above or create a new one to start taking attendance.');
+  }
+  if(isAdmin){
+    html += '<button class="btn btn-ghost btn-block" data-action="open-edit-meeting" data-meeting="'+meeting.id+'" style="margin-bottom:16px;">Edit meeting name / date</button>';
   }
 
   var html2 = '<div class="card session-card">';
@@ -973,6 +976,21 @@ function modalAddMeeting(){
     '</div>'
   );
 }
+  function modalEditMeeting(meeting){
+  openModal(
+    '<h2>Edit meeting</h2>' +
+    '<label class="field-label">Title</label>' +
+    '<input id="f-etitle" type="text" value="'+escapeHtml(meeting.title)+'">' +
+    '<div class="field-error" id="f-etitle-err">Enter a title first.</div>' +
+    '<label class="field-label">Date</label>' +
+    '<input id="f-edate" type="date" value="'+meeting.date+'">' +
+    '<div class="sheet-actions">' +
+      '<button class="btn btn-ghost" data-action="close-modal">Cancel</button>' +
+      '<button class="btn btn-primary" data-action="save-edit-meeting" data-meeting="'+meeting.id+'">Save changes</button>' +
+    '</div>'
+  );
+}
+
 function modalAddLink(){
   var preselect = LINK_CATEGORIES.some(function(c){return c.id===state.resCategory;}) ? state.resCategory : 'forms';
   var opts = LINK_CATEGORIES.map(function(c){return '<option value="'+c.id+'" '+(c.id===preselect?'selected':'')+'>'+c.label+'</option>';}).join('');
@@ -1085,6 +1103,11 @@ var handlers = {
   'pick-meeting': function(el){ state.currentMeetingId = el.value || null; render(); },
   'open-add-member': function(){ modalAddMember(); },
   'open-add-meeting': function(){ modalAddMeeting(); },
+  'open-edit-meeting': function(el){
+    var meeting = appData.meetings.find(function(m){return m.id===el.dataset.meeting;});
+    if(!meeting) return;
+    modalEditMeeting(meeting);
+  },
   'open-add-link': function(){ closeModal(); modalAddLink(); },
   'open-add-photo': function(){ closeModal(); modalAddPhoto(); },
   'open-add-resource': function(){ modalChooseResourceType(); },
@@ -1124,6 +1147,19 @@ var handlers = {
     state.currentMeetingId = m.id;
     await saveData();
     closeModal(); render(); showToast('Meeting created');
+  },
+  'save-edit-meeting': async function(el){
+    var meetingId = el.dataset.meeting;
+    var meeting = appData.meetings.find(function(m){return m.id===meetingId;});
+    if(!meeting) return;
+    var t = document.getElementById('f-etitle').value.trim();
+    var d = document.getElementById('f-edate').value;
+    if(!t){ document.getElementById('f-etitle-err').classList.add('show'); return; }
+    if(!d) d = meeting.date;
+    meeting.title = t;
+    meeting.date = d;
+    await saveData();
+    closeModal(); render(); showToast('Meeting updated');
   },
   'save-link': async function(){
     var t = document.getElementById('f-ltitle').value.trim();
