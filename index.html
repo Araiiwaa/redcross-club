@@ -584,30 +584,26 @@ function render(){
 }
 
 /* ---------- ATTENDANCE ---------- */
-function renderRoster(){
-  var html = '';
-  
-  // Only admins see the "+ Add member" button
+function renderAttendance(){
+  if (!isAdmin && state.attView === 'take') {
+    state.attView = 'roster';
+  }
+
+  var html = '<div class="segmented">';
   if (isAdmin) {
-    html += '<button class="btn btn-primary btn-block" data-action="open-add-member" style="margin-bottom:14px;">+ Add member</button>';
+    html += seg('take', 'Session');
   }
+  html += seg('roster', 'Roster') + seg('history', 'History') + '</div>';
 
-  if (appData.members.length === 0){
-    return html + emptyState('No members yet', 'Add everyone in your club so you can track their attendance at each meeting.');
-  }
+  if (isAdmin && state.attView === 'take') html += renderTake();
+  else if (state.attView === 'roster') html += renderRoster();
+  else html += renderHistory();
 
-  html += '<div class="card" style="padding:6px 16px;">';
-  appData.members.slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(m){
-    var pct = memberPct(m.id);
-    html += '<div class="row row-between member-row">' +
-      '<div class="row"><div class="avatar">' + initials(m.name) + '</div>' +
-      '<div><div class="mname">' + escapeHtml(m.name) + '</div><div class="msub mono">' + pct + '% attendance</div></div></div>' +
-      (isAdmin ? '<button class="icon-btn" data-action="delete-member" data-member="' + m.id + '" aria-label="Remove member"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>' : '') +
-      '</div>';
-  });
-  html += '</div>';
-  
   return html;
+
+  function seg(id, label){
+    return '<button class="' + (state.attView === id ? 'active' : '') + '" data-action="set-attview" data-view="' + id + '">' + label + '</button>';
+  }
 }
 
 function renderTake(){
@@ -681,25 +677,27 @@ function statusLabel(s){
 }
 
 function renderRoster(){
+  var html = '';
   
-  var html = '<button class="btn btn-primary btn-block" data-action="open-add-member" style="margin-bottom:14px;">+ Add member</button>';
   if (isAdmin) {
     html += '<button class="btn btn-primary btn-block" data-action="open-add-member" style="margin-bottom:14px;">+ Add member</button>';
   }
-  if(appData.members.length === 0){
-    return html + emptyState('No members yet','Add everyone in your club so you can track their attendance at each meeting.');
+
+  if (appData.members.length === 0){
+    return html + emptyState('No members yet', 'Add everyone in your club so you can track their attendance at each meeting.');
   }
+
   html += '<div class="card" style="padding:6px 16px;">';
-  appData.members.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).forEach(function(m){
+  appData.members.slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(m){
     var pct = memberPct(m.id);
     html += '<div class="row row-between member-row">' +
-      '<div class="row"><div class="avatar">'+initials(m.name)+'</div>' +
-      '<div><div class="mname">'+escapeHtml(m.name)+'</div><div class="msub mono">'+pct+'% attendance</div></div></div>' +
-      (isAdmin ? '<button class="icon-btn" data-action="delete-member" data-member="'+m.id+'" aria-label="Remove member"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>' : '') +
-      '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>' +
-      '</button></div>';
+      '<div class="row"><div class="avatar">' + initials(m.name) + '</div>' +
+      '<div><div class="mname">' + escapeHtml(m.name) + '</div><div class="msub mono">' + pct + '% attendance</div></div></div>' +
+      (isAdmin ? '<button class="icon-btn" data-action="delete-member" data-member="' + m.id + '" aria-label="Remove member"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>' : '') +
+      '</div>';
   });
   html += '</div>';
+
   return html;
 }
 
