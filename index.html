@@ -397,16 +397,16 @@ var state = {
   checkinDone: null,
   prefillCode: ''
 };
-/* ---------- 	 config ---------- */
+/* ---------- Firebase config ---------- */
 /* Paste your own Firebase project's web config here — see the in-app setup
    screen (shown automatically until this is filled in) for step-by-step help. */
 var firebaseConfig = {
-  apiKey: "AIzaSyA8aVAvCq4QwGYMwygv6rWzVq5QACaWVVg",
-  authDomain: "redcross-club-af2a2.firebaseapp.com",
-  projectId: "redcross-club-af2a2",
-  storageBucket: "redcross-club-af2a2.firebasestorage.app",
-  messagingSenderId: "572213825044",
-  appId: "1:572213825044:web:dde92a405188c99dc1e101"
+  apiKey: "PASTE_YOUR_API_KEY_HERE",
+  authDomain: "PASTE_YOUR_AUTH_DOMAIN_HERE",
+  projectId: "PASTE_YOUR_PROJECT_ID_HERE",
+  storageBucket: "PASTE_YOUR_STORAGE_BUCKET_HERE",
+  messagingSenderId: "PASTE_YOUR_SENDER_ID_HERE",
+  appId: "PASTE_YOUR_APP_ID_HERE"
 };
 var db = null;
 
@@ -904,7 +904,9 @@ function emptyState(title, body, btnLabel, action, dataKey, dataVal){
 }
 
 /* ---------- modals ---------- */
+var modalCloseTimeout = null;
 function openModal(html){
+  if(modalCloseTimeout){ clearTimeout(modalCloseTimeout); modalCloseTimeout = null; }
   var root = document.getElementById('modalRoot');
   root.innerHTML = '<div class="overlay" id="overlayEl"><div class="sheet">' +
     '<div class="sheet-handle"></div>' + html + '</div></div>';
@@ -917,7 +919,10 @@ function closeModal(){
   var ov = document.getElementById('overlayEl');
   if(!ov) return;
   ov.classList.remove('open');
-  setTimeout(function(){ document.getElementById('modalRoot').innerHTML=''; }, 150);
+  modalCloseTimeout = setTimeout(function(){
+    document.getElementById('modalRoot').innerHTML='';
+    modalCloseTimeout = null;
+  }, 150);
 }
 
 function modalAddMember(){
@@ -1339,7 +1344,7 @@ function setupPWA(){
     var manifest = {
       name: (appData.clubName || 'Red Cross Club'),
       short_name: (appData.clubName || 'RC Club').slice(0,12),
-      start_url: location.pathname + location.search,
+      start_url: location.origin + location.pathname + location.search,
       display: 'standalone',
       orientation: 'portrait',
       background_color: '#FBF7EF',
