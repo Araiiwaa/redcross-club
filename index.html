@@ -553,17 +553,15 @@ function showSetupScreen(){
 /* ---------- render dispatch ---------- */
 function render(){
   document.getElementById('clubNameDisplay').textContent = appData.clubName || 'Red Cross Club';
+  
+  if (!isAdmin) {
+  var editBtn = document.querySelector('.edit-name-btn');
+  if (editBtn) editBtn.style.display = 'none';
+}
   document.querySelectorAll('.navbtn').forEach(function(b){
     b.classList.toggle('active', b.dataset.tab === state.tab);
   });
-  var editBtn = document.querySelector('.edit-name-btn');[cite: 1]
-  if (editBtn) {
-    editBtn.style.display = isAdmin ? 'flex' : 'none';
-  }
-
-  document.querySelectorAll('.navbtn').forEach(function(b){[cite: 1]
-    b.classList.toggle('active', b.dataset.tab === state.tab);[cite: 1]
-  });
+ 
   var fab = document.getElementById('fabBtn');
   var main = document.getElementById('content');
 
@@ -606,6 +604,8 @@ function renderAttendance(){
 function renderTake(){
   if(appData.members.length === 0){
     return emptyState('No members yet','Add your club members in the Roster tab before taking attendance.', 'Go to Roster', 'set-attview', 'view', 'roster');
+    var dis = isAdmin ? '' : 'disabled style="pointer-events:none; opacity:0.8;"';
+    html2 += '<button class="status-pill status-'+s+'" '+dis+' data-action="cycle-status"...';
   }
 
   var html = '<div class="meeting-picker">';
