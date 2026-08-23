@@ -588,19 +588,21 @@ function renderAttendance(){
   if (!isAdmin && state.attView === 'take') {
     state.attView = 'roster';
   }
-  var html = '';
-  html += '<div class="segmented">' +
-    seg('take','Session') + seg('roster','Roster') + seg('history','History') +
-    '</div>';
+  
+  var html = '<div class="segmented">';
+  if (isAdmin) {
+    html += seg('take', 'Session');
+  }
+  html += seg('roster', 'Roster') + seg('history', 'History') + '</div>';
 
-  if(state.attView === 'take') html += renderTake();
-  else if(state.attView === 'roster') html += renderRoster();
+  if (isAdmin && state.attView === 'take') html += renderTake();
+  else if (state.attView === 'roster') html += renderRoster();
   else html += renderHistory();
 
   return html;
 
-  function seg(id,label){
-    return '<button class="'+(state.attView===id?'active':'')+'" data-action="set-attview" data-view="'+id+'">'+label+'</button>';
+  function seg(id, label){
+    return '<button class="' + (state.attView === id ? 'active' : '') + '" data-action="set-attview" data-view="' + id + '">' + label + '</button>';
   }
 }
 
@@ -675,7 +677,11 @@ function statusLabel(s){
 }
 
 function renderRoster(){
+  
   var html = '<button class="btn btn-primary btn-block" data-action="open-add-member" style="margin-bottom:14px;">+ Add member</button>';
+  if (isAdmin) {
+    html += '<button class="btn btn-primary btn-block" data-action="open-add-member" style="margin-bottom:14px;">+ Add member</button>';
+  }
   if(appData.members.length === 0){
     return html + emptyState('No members yet','Add everyone in your club so you can track their attendance at each meeting.');
   }
