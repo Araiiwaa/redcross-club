@@ -585,6 +585,9 @@ function render(){
 
 /* ---------- ATTENDANCE ---------- */
 function renderAttendance(){
+  if (!isAdmin && state.attView === 'take') {
+    state.attView = 'roster';
+  }
   var html = '';
   html += '<div class="segmented">' +
     seg('take','Session') + seg('roster','Roster') + seg('history','History') +
