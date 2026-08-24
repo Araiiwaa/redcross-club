@@ -628,7 +628,8 @@ function renderTake(){
     return html + emptyState('No meeting selected','Pick an existing meeting above or create a new one to start taking attendance.');
   }
   if(isAdmin){
-    html += '<button class="btn btn-ghost btn-block" data-action="open-edit-meeting" data-meeting="'+meeting.id+'" style="margin-bottom:16px;">Edit meeting name / date</button>';
+    html += '<button class="btn btn-ghost btn-block" data-action="open-edit-meeting" data-meeting="'+meeting.id+'" style="margin-bottom:10px;">Edit meeting name / date</button>';
+    html += '<button class="btn btn-ghost btn-block" data-action="delete-meeting" data-meeting="'+meeting.id+'" style="margin-bottom:16px;color:var(--red-dark);">Delete this meeting</button>';
   }
 
   var html2 = '<div class="card session-card">';
@@ -1160,6 +1161,25 @@ var handlers = {
     meeting.date = d;
     await saveData();
     closeModal(); render(); showToast('Meeting updated');
+  },
+  'delete-meeting': function(el){
+    var meeting = appData.meetings.find(function(m){return m.id===el.dataset.meeting;});
+    if(!meeting) return;
+    modalConfirm(
+      'Delete meeting?',
+      'This permanently removes "'+escapeHtml(meeting.title)+'" and its attendance record for everyone. This can\'t be undone.',
+      'confirm-delete-meeting',
+      meeting.id
+    );
+  },
+  'confirm-delete-meeting': async function(el){
+    var id = el.dataset.confirmid;
+    appData.meetings = appData.meetings.filter(function(m){return m.id!==id;});
+    delete appData.attendance[id];
+    delete appData.deviceLocks[id];
+    if(state.currentMeetingId === id) state.currentMeetingId = null;
+    await saveData();
+    closeModal(); render(); showToast('Meeting deleted');
   },
   'save-link': async function(){
     var t = document.getElementById('f-ltitle').value.trim();
