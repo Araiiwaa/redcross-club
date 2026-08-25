@@ -631,17 +631,23 @@ if(!isFirebaseConfigured()){
 
 /* ---------- render dispatch ---------- */
 function render(){
+  // 1. Guard must be INSIDE the function at the top
   if (!appData) {
-    console.log("Waiting for appData to load from FireStore...");
+    console.log("Waiting for appData to load from Firestore...");
     return;
   }
 
-  document.getElementById('clubNameDisplay').textContent = appData.clubName || 'Red Cross Club';
-  
+  // 2. Safely update club name
+  var nameEl = document.getElementById('clubNameDisplay');
+  if (nameEl) {
+    nameEl.textContent = appData.clubName || 'Red Cross Club';
+  }
+
   if (!isAdmin) {
-  var editBtn = document.querySelector('.edit-name-btn');
-  if (editBtn) editBtn.style.display = 'none';
-}
+    var editBtn = document.querySelector('.edit-name-btn');
+    if (editBtn) editBtn.style.display = 'none';
+  }
+
   document.querySelectorAll('.navbtn').forEach(function(b){
     b.classList.toggle('active', b.dataset.tab === state.tab);
   });
@@ -650,20 +656,24 @@ function render(){
   var main = document.getElementById('content');
 
   if(state.tab === 'checkin'){
-    fab.style.display = 'none';
-    main.innerHTML = renderCheckIn();
+    if (fab) fab.style.display = 'none';
+    if (main) main.innerHTML = renderCheckIn();
   }else if(state.tab === 'attendance'){
-    fab.style.display = 'none';
-    main.innerHTML = renderAttendance();
+    if (fab) fab.style.display = 'none';
+    if (main) main.innerHTML = renderAttendance();
   }else if(state.tab === 'resources'){
-    fab.style.display = 'flex';
-    fab.dataset.action = state.resCategory==='photos' ? 'open-add-photo' : (state.resCategory==='all' ? 'open-add-resource' : 'open-add-link');
-    main.innerHTML = renderResources();
-    loadVisiblePhotos();
+    if (fab) {
+      fab.style.display = 'flex';
+      fab.dataset.action = state.resCategory==='photos' ? 'open-add-photo' : (state.resCategory==='all' ? 'open-add-resource' : 'open-add-link');
+    }
+    if (main) main.innerHTML = renderResources();
+    if (typeof loadVisiblePhotos === 'function') loadVisiblePhotos();
   }else if(state.tab === 'news'){
-    fab.style.display = 'flex';
-    fab.dataset.action = 'open-add-news';
-    main.innerHTML = renderNews();
+    if (fab) {
+      fab.style.display = 'flex';
+      fab.dataset.action = 'open-add-news';
+    }
+    if (main) main.innerHTML = renderNews();
   }
 }
 
