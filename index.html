@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
   :root{
@@ -444,7 +444,18 @@ function logoutAdmin() {
   messagingSenderId: "572213825044",
   appId: "1:572213825044:web:dde92a405188c99dc1e101"
 };
-var db = null;
+firebase.initializeApp(firebaseConfig);
+
+var db = firebase.firestore();
+var auth = firebase.auth();
+var isAdmin = false;
+
+auth.onAuthStateChanged(function(user) {
+  isAdmin = !!user;
+  if (typeof redner === 'function') {
+    render();
+  }
+});
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
