@@ -546,7 +546,14 @@ function showSetupScreen(){
     '<p style="margin-top:16px;">Heads up: with the rule above, anyone who has this file\'s config can read or write the data — fine for an internal club tool, but don\'t treat it as private or sensitive.</p>' +
     '</div>';
 }
-
+var db = null;
+var auth = null;
+var appData = null;
+if(!isFirebaseConfigured()){
+  console.error("isFirebaseConfigured() returned false!");
+  showSetupScreen();
+  return;
+}
 /* ---------- init ---------- */
 (function initApp(){
   if(!isFirebaseConfigured()){
@@ -554,14 +561,36 @@ function showSetupScreen(){
     return;
   }
   
+  try {
+    // Make sure app isn't already initialized
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+  
   try{
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
+    auth = firebase.auth();
+    
+    console.log("Firebase initialized successfully.");
+  } catch(e) {
+    console.error("Firebase init failed:", e);
     auth = firebase.auth(); // 1. INITIALIZE AUTH HERE
   }catch(e){
     showSetupScreen();
     return;
   }
+
+  // Auth listener
+  auth.onAuthStateChanged(function(user){
+    isAdmin = !!user;
+    console.log("Auth state changed, isAdmin =", isAdmin);
+    render();
+  });
+
+  // Firestore listener with log
+  console.log("Attaching Firestore listener to /club/data...");
+  
 
   // 2. LISTEN FOR AUTH CHANGES INSIDE INIT
   auth.onAuthStateChanged(function(user){
@@ -577,17 +606,21 @@ function showSetupScreen(){
 
   var firstLoad = true;
   db.collection('club').doc('data').onSnapshot(function(doc){
+    console.log("Firestore snapshot received! Exists?", doc.exists);
     appData = doc.exists ? doc.data() : defaultData();
     ensureDefaults();
     
     if(firstLoad){
       firstLoad = false;
-      document.getElementById('loadscreen').style.display = 'none';
-      document.getElementById('app').style.display = 'flex';
-      setupPWA();
+      var loadScreen = document.getElementById('loadscreen');
+      var appEl = document.getElementById('app');
+      if (loadScreen) loadScreen.style.display = 'none';
+      if (appEl) appEl.style.display = 'flex';
+      if (typeof setupPWA === 'function') setupPWA();
     }
     render(); // 3. RENDER ONCE FIRESTORE DATA ARRIVES
   }, function(err){
+    console.error("Firestore Error:", err);
     console.error("Firestore snapshot error:", err);
     if(firstLoad){
       document.getElementById('loadscreen').style.display = 'none';
