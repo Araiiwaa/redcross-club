@@ -283,7 +283,7 @@
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
   .loadscreen{position:fixed; inset:0; background:var(--cream); display:flex; align-items:center; justify-content:center; z-index:100; flex-direction:column; gap:10px;}
-  .loadscreen .cross-logo{animation:pulse 1s ease-in-out infinite;}
+  
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
   .loadscreen span{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em;}
 
@@ -337,9 +337,9 @@
 <div id="app" style="display:none;">
   <header>
     <div class="brandrow">
-      <img scr="WRCC-logo.JPG" class="cross-logo" alt="Club logo">
+      <img src="WRCC-logo.JPG" class="cross-logo" alt="Club logo">
       <div class="brand-text">
-        <h1 id="clubNameDisplay">Red Cross Club</h1>
+        <h1 id="clubNameDisplay">Wells Red Cross Club</h1>
         <div class="tagline">Service · Attendance · Resources</div>
       </div>
       <button class="edit-name-btn" data-action="open-rename" aria-label="Edit club name">
