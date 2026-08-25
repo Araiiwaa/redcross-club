@@ -70,6 +70,7 @@
   .cross-logo{
     width:30px;height:30px;flex-shrink:0;position:relative;
     background:var(--red); border-radius:6px;
+    object-fit: cover;
   }
   .cross-logo::before,.cross-logo::after{
     content:""; position:absolute; background:var(--paper);
@@ -336,7 +337,7 @@
 <div id="app" style="display:none;">
   <header>
     <div class="brandrow">
-      <div class="cross-logo"></div>
+      <img scr="WRCC-logo.JPG" class="cross-logo" alt="Club logo">
       <div class="brand-text">
         <h1 id="clubNameDisplay">Red Cross Club</h1>
         <div class="tagline">Service · Attendance · Resources</div>
