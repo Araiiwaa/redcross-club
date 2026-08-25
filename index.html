@@ -553,30 +553,42 @@ function showSetupScreen(){
     showSetupScreen();
     return;
   }
+  
   try{
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
+    auth = firebase.auth(); // 1. INITIALIZE AUTH HERE
   }catch(e){
     showSetupScreen();
     return;
   }
+
+  // 2. LISTEN FOR AUTH CHANGES INSIDE INIT
+  auth.onAuthStateChanged(function(user){
+    isAdmin = !!user;
+    if (appData) render(); // Only re-render if data has already arrived
+  });
+
   try{
     var params = new URLSearchParams(location.search);
     var codeParam = params.get('code');
     if(codeParam){ state.tab = 'checkin'; state.prefillCode = codeParam; }
   }catch(e){}
+
   var firstLoad = true;
   db.collection('club').doc('data').onSnapshot(function(doc){
     appData = doc.exists ? doc.data() : defaultData();
     ensureDefaults();
+    
     if(firstLoad){
       firstLoad = false;
       document.getElementById('loadscreen').style.display = 'none';
       document.getElementById('app').style.display = 'flex';
       setupPWA();
     }
-    render();
+    render(); // 3. RENDER ONCE FIRESTORE DATA ARRIVES
   }, function(err){
+    console.error("Firestore snapshot error:", err);
     if(firstLoad){
       document.getElementById('loadscreen').style.display = 'none';
       showToast("Can't connect — check Firestore rules / config");
@@ -603,7 +615,7 @@ function render(){
 
   var fab = document.getElementById('fabBtn');
   var main = document.getElementById('content');
-  
+
   if(state.tab === 'checkin'){
     fab.style.display = 'none';
     main.innerHTML = renderCheckIn();
