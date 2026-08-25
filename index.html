@@ -15,6 +15,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
   :root{
     --red:#C8102E;
@@ -398,7 +399,43 @@ var state = {
   checkinDone: null,
   prefillCode: ''
 };
-  var isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
+// Firebase authentication
+var auth = firebase.auth();
+var isAdmin = false;
+
+// Automatically checks if you are logged in as admin
+auth.onAuthStateChanged(function(user) {
+  isAdmin = !!user;
+  
+  // Re-render the app UI whenever login state changes
+  if (typeof render === 'function') {
+    render();
+  }
+});
+
+// Call this when clicking your Admin Login button
+function loginAdmin() {
+  var email = prompt("Admin Email:");
+  if (!email) return;
+  var password = prompt("Admin Password:");
+  if (!password) return;
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then(function() {
+      alert("Logged in as Admin!");
+    })
+    .catch(function(error) {
+      alert("Login failed: " + error.message);
+    });
+}
+
+// Call this when clicking Logout
+function logoutAdmin() {
+  auth.signOut().then(function() {
+    alert("Logged out of Admin mode.");
+  });
+}
+
 /* ---------- Firebase config ---------- */
   var firebaseConfig = {
   apiKey: "AIzaSyA8aVAvCq4QwGYMwygv6rWzVq5QACaWVVg",
