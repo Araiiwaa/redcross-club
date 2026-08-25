@@ -14,6 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
   :root{
     --red:#C8102E;
@@ -399,9 +400,6 @@ var state = {
 };
   var isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
 /* ---------- Firebase config ---------- */
-/* Paste your own Firebase project's web config here — see the in-app setup
-   screen (shown automatically until this is filled in) for step-by-step help. */
-
   var firebaseConfig = {
   apiKey: "AIzaSyA8aVAvCq4QwGYMwygv6rWzVq5QACaWVVg",
   authDomain: "redcross-club-af2a2.firebaseapp.com",
@@ -449,7 +447,6 @@ function ensureDefaults(){
   if(!appData.news) appData.news = [];
 }
 
-/* device identity, used to enforce one check-in device per person per meeting */
 function getDeviceId(){
   try{
     var id = window.localStorage.getItem('rc-device-id');
@@ -489,23 +486,17 @@ function showSetupScreen(){
     '<div class="setup-inner">' +
     '<h2>One-time setup</h2>' +
     '<p>This app stores its data in a free Firebase project so it keeps working as a permanent, always-live app — not just inside a Claude chat. Do this once and it\'s done.</p>' +
-
     '<div class="setup-step"><span class="setup-step-num">1</span><h3>Create a Firebase project</h3>' +
     '<p>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noopener">console.firebase.google.com</a>, sign in with any Google account, click <b>Add project</b>, give it a name, and skip Google Analytics.</p></div>' +
-
     '<div class="setup-step"><span class="setup-step-num">2</span><h3>Turn on Firestore</h3>' +
     '<p>In the left menu go to <b>Build \u2192 Firestore Database \u2192 Create database</b>. Choose any region and start in <b>test mode</b>.</p></div>' +
-
     '<div class="setup-step"><span class="setup-step-num">3</span><h3>Open the Rules tab and paste this</h3>' +
     '<p>This keeps the database open to your club (no logins), same as how the app works today. Click <b>Publish</b> after pasting.</p>' +
     '<span class="setup-code">rules_version = \'2\';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}</span></div>' +
-
     '<div class="setup-step"><span class="setup-step-num">4</span><h3>Register a web app</h3>' +
     '<p>Click the gear icon \u2192 <b>Project settings</b>, scroll to "Your apps", click the <b>&lt;/&gt;</b> web icon, give it any nickname, and skip Firebase Hosting. It shows a code block starting with <b>const firebaseConfig = {...}</b>.</p></div>' +
-
     '<div class="setup-step"><span class="setup-step-num">5</span><h3>Paste it into this file</h3>' +
     '<p>Open this HTML file in a text editor, find <b>firebaseConfig</b> near the top of the script, and replace the six PASTE_YOUR_...  placeholders with the matching values Firebase gave you. Save, re-upload, and reload this page.</p></div>' +
-
     '<p style="margin-top:16px;">Heads up: with the rule above, anyone who has this file\'s config can read or write the data — fine for an internal club tool, but don\'t treat it as private or sensitive.</p>' +
     '</div>';
 }
@@ -523,13 +514,11 @@ function showSetupScreen(){
     showSetupScreen();
     return;
   }
-
   try{
     var params = new URLSearchParams(location.search);
     var codeParam = params.get('code');
     if(codeParam){ state.tab = 'checkin'; state.prefillCode = codeParam; }
   }catch(e){}
-
   var firstLoad = true;
   db.collection('club').doc('data').onSnapshot(function(doc){
     appData = doc.exists ? doc.data() : defaultData();
@@ -549,11 +538,9 @@ function showSetupScreen(){
   });
 })();
 
-
 /* ---------- render dispatch ---------- */
 function render(){
   document.getElementById('clubNameDisplay').textContent = appData.clubName || 'Red Cross Club';
-  
   if (!isAdmin) {
   var editBtn = document.querySelector('.edit-name-btn');
   if (editBtn) editBtn.style.display = 'none';
@@ -561,10 +548,8 @@ function render(){
   document.querySelectorAll('.navbtn').forEach(function(b){
     b.classList.toggle('active', b.dataset.tab === state.tab);
   });
- 
   var fab = document.getElementById('fabBtn');
   var main = document.getElementById('content');
-
   if(state.tab === 'checkin'){
     fab.style.display = 'none';
     main.innerHTML = renderCheckIn();
@@ -588,19 +573,15 @@ function renderAttendance(){
   if (!isAdmin && state.attView === 'take') {
     state.attView = 'roster';
   }
-
   var html = '<div class="segmented">';
   if (isAdmin) {
     html += seg('take', 'Session');
   }
   html += seg('roster', 'Roster') + seg('history', 'History') + '</div>';
-
   if (isAdmin && state.attView === 'take') html += renderTake();
   else if (state.attView === 'roster') html += renderRoster();
   else html += renderHistory();
-
   return html;
-
   function seg(id, label){
     return '<button class="' + (state.attView === id ? 'active' : '') + '" data-action="set-attview" data-view="' + id + '">' + label + '</button>';
   }
@@ -610,7 +591,6 @@ function renderTake(){
   if(appData.members.length === 0){
     return emptyState('No members yet','Add your club members in the Roster tab before taking attendance.', 'Go to Roster', 'set-attview', 'view', 'roster');
   }
-
   var html = '<div class="meeting-picker">';
   html += '<label class="field-label">Meeting</label>';
   html += '<select id="meetingSelect" data-action="pick-meeting">';
@@ -622,11 +602,12 @@ function renderTake(){
   if(isAdmin) {
   html += '<button class="btn btn-ghost btn-block" data-action="open-add-meeting" style="margin-bottom:16px;">+ New meeting</button>';
   }
-  
+
   var meeting = appData.meetings.find(function(m){return m.id === state.currentMeetingId;});
   if(!meeting){
     return html + emptyState('No meeting selected','Pick an existing meeting above or create a new one to start taking attendance.');
   }
+
   if(isAdmin){
     html += '<button class="btn btn-ghost btn-block" data-action="open-edit-meeting" data-meeting="'+meeting.id+'" style="margin-bottom:10px;">Edit meeting name / date</button>';
     html += '<button class="btn btn-ghost btn-block" data-action="delete-meeting" data-meeting="'+meeting.id+'" style="margin-bottom:16px;color:var(--red-dark);">Delete this meeting</button>';
@@ -682,15 +663,12 @@ function statusLabel(s){
 
 function renderRoster(){
   var html = '';
-  
   if (isAdmin) {
     html += '<button class="btn btn-primary btn-block" data-action="open-add-member" style="margin-bottom:14px;">+ Add member</button>';
   }
-
   if (appData.members.length === 0){
     return html + emptyState('No members yet', 'Add everyone in your club so you can track their attendance at each meeting.');
   }
-
   html += '<div class="card" style="padding:6px 16px;">';
   appData.members.slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(m){
     var pct = memberPct(m.id);
@@ -701,7 +679,6 @@ function renderRoster(){
       '</div>';
   });
   html += '</div>';
-
   return html;
 }
 
@@ -770,7 +747,6 @@ function renderCheckIn(){
       '<button class="btn btn-ghost" data-action="checkin-again">Check in someone else</button>' +
       '</div>';
   }
-
   var meeting = appData.meetings.find(function(m){return m.active && m.code;});
   if(appData.members.length===0){
     return emptyState('No roster yet','Ask your leader to add members before check-in can be used.');
@@ -778,12 +754,10 @@ function renderCheckIn(){
   if(!meeting){
     return emptyState('Check-in is closed','Your leader hasn\'t started check-in for a meeting yet. Ask them to open it from the Attendance tab.');
   }
-
   var codeFromUrl = state.prefillCode || '';
   var opts = '<option value="">Select your name…</option>' + appData.members.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(m){
     return '<option value="'+m.id+'">'+escapeHtml(m.name)+'</option>';
   }).join('');
-
   return '<div class="card">' +
     '<div class="section-title" style="margin-top:0;">'+escapeHtml(meeting.title)+' · '+fmtDate(meeting.date)+'</div>' +
     '<label class="field-label">Your name</label>' +
@@ -820,17 +794,13 @@ function renderResources(){
     html += '<button class="chip '+(state.resCategory===c.id?'active':'')+'" data-action="set-rescat" data-cat="'+c.id+'">'+c.label+'</button>';
   });
   html += '</div>';
-
   var showPhotos = state.resCategory === 'all' || state.resCategory === 'photos';
   var showLinks = state.resCategory !== 'photos';
-
   if(appData.links.length === 0 && appData.photos.length === 0){
     html += emptyState('Nothing here yet','Upload event photos or add your Google Form, Slides, and Docs links so the whole club can find them in one place.', 'Upload a photo', 'open-add-photo');
     return html;
   }
-
   var body = '';
-
   if(showPhotos && appData.photos.length){
     body += '<div class="section-title" style="margin-top:0;">Event photos</div>';
     body += '<div class="photo-grid">';
@@ -847,7 +817,6 @@ function renderResources(){
   if(showPhotos && appData.photos.length===0 && state.resCategory==='photos'){
     body += emptyState('No event photos yet','Members can upload photos from meetings, service days, and events right from their phone.', 'Upload a photo', 'open-add-photo');
   }
-
   if(showLinks){
     var links = appData.links.filter(function(l){ return state.resCategory==='all' || l.category===state.resCategory; });
     if(links.length){
@@ -871,7 +840,6 @@ function renderResources(){
       body += emptyState('No links in this category','Try another category, or add a new link here.');
     }
   }
-
   if(!body) body = emptyState('No links in this category','Try another category, or add a new link here.');
   return html + body;
 }
@@ -977,7 +945,7 @@ function modalAddMeeting(){
     '</div>'
   );
 }
-  function modalEditMeeting(meeting){
+function modalEditMeeting(meeting){
   openModal(
     '<h2>Edit meeting</h2>' +
     '<label class="field-label">Title</label>' +
@@ -991,7 +959,6 @@ function modalAddMeeting(){
     '</div>'
   );
 }
-
 function modalAddLink(){
   var preselect = LINK_CATEGORIES.some(function(c){return c.id===state.resCategory;}) ? state.resCategory : 'forms';
   var opts = LINK_CATEGORIES.map(function(c){return '<option value="'+c.id+'" '+(c.id===preselect?'selected':'')+'>'+c.label+'</option>';}).join('');
@@ -1026,8 +993,9 @@ function modalAddPhoto(){
   openModal(
     '<h2>Upload photo</h2>' +
     '<label class="field-label">Photo</label>' +
-    '<label class="file-drop" id="fileDropLabel">Tap to choose a photo<br>from your camera roll or camera</label>' +
+    '<label class="file-drop" id="fileDropLabel">Tap to choose a photo<br>from your camera roll or camera' +
     '<input id="f-pfile" type="file" accept="image/*" style="display:none;">' +
+    '</label>' +
     '<img id="f-ppreview" class="upload-preview">' +
     '<div class="field-error" id="f-pfile-err">Choose a photo first.</div>' +
     '<label class="field-label">Caption (optional)</label>' +
@@ -1277,7 +1245,6 @@ var handlers = {
     if(!memberId){ document.getElementById('ci-member-err').classList.add('show'); ok=false; } else { document.getElementById('ci-member-err').classList.remove('show'); }
     if(!meeting || !meeting.active || code !== meeting.code){ document.getElementById('ci-code-err').classList.add('show'); ok=false; } else { document.getElementById('ci-code-err').classList.remove('show'); }
     if(!ok) return;
-
     var deviceId = getDeviceId();
     var locks = appData.deviceLocks[meetingId] || (appData.deviceLocks[meetingId] = {});
     var lockedMember = locks[deviceId];
@@ -1287,7 +1254,6 @@ var handlers = {
     }
     document.getElementById('ci-device-err').classList.remove('show');
     locks[deviceId] = memberId;
-
     var rec = appData.attendance[meetingId] || (appData.attendance[meetingId] = {});
     rec[memberId] = 'present';
     await saveData();
@@ -1384,11 +1350,11 @@ async function compressImageUnderLimit(file){
     {maxDim:800,  quality:0.5},
     {maxDim:600,  quality:0.4}
   ];
-  var byteLimit = 700000; // ~700KB raw, comfortably under the 1MiB doc cap once encoded
+  var byteLimit = 700000;
   var last = null;
   for(var i=0; i<attempts.length; i++){
     last = await compressImage(file, attempts[i].maxDim, attempts[i].quality);
-    if(last.length * 0.75 < byteLimit) return last; // base64 is ~4/3 the raw size
+    if(last.length * 0.75 < byteLimit) return last;
   }
   return last;
 }
@@ -1412,17 +1378,14 @@ function setupPWA(){
     var icon180 = makeIconDataUrl(180);
     var icon192 = makeIconDataUrl(192);
     var icon512 = makeIconDataUrl(512);
-
     var appleIcon = document.createElement('link');
     appleIcon.rel = 'apple-touch-icon';
     appleIcon.href = icon180;
     document.head.appendChild(appleIcon);
-
     var favicon = document.createElement('link');
     favicon.rel = 'icon';
     favicon.href = icon192;
     document.head.appendChild(favicon);
-
     var manifest = {
       name: (appData.clubName || 'Red Cross Club'),
       short_name: (appData.clubName || 'RC Club').slice(0,12),
