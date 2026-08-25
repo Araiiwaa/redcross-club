@@ -837,7 +837,7 @@ function renderResources(){
     appData.photos.slice().sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);}).forEach(function(p){
       body += '<a class="photo-tile" href="javascript:void(0)" data-action="open-photo" data-photoid="'+p.id+'">' +
         '<img class="photo-tile-img loading" id="pimg-'+p.id+'" alt="">' +
-        '<button class="icon-btn photo-del" data-action="delete-photo" data-photo="'+p.id+'" aria-label="Delete photo" onclick="event.stopPropagation();event.preventDefault();">' +
+        '<button class="icon-btn photo-del" data-action="delete-photo" data-photo="'+p.id+'" aria-label="Delete photo" onclick="event.preventDefault();">' +
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
         (p.caption ? '<div class="photo-tile-cap">'+escapeHtml(p.caption)+'</div>' : '') +
         '</a>';
@@ -1047,13 +1047,12 @@ function modalAddPhoto(){
     var file = e.target.files[0];
     document.getElementById('f-pfile-err').classList.remove('show');
     if(!file) return;
-    var reader = new FileReader();
-    reader.onload = function(ev){
-      var img = document.getElementById('f-ppreview');
-      img.src = ev.target.result;
-      img.classList.add('show');
-    };
-    reader.readAsDataURL(file);
+    var img = document.getElementById('f-ppreview');
+    if(img.dataset.blobUrl) URL.revokeObjectURL(img.dataset.blobUrl);
+    var blobUrl = URL.createObjectURL(file);
+    img.dataset.blobUrl = blobUrl;
+    img.src = blobUrl;
+    img.classList.add('show');
   });
 }
 function modalAddNews(){
@@ -1212,7 +1211,8 @@ var handlers = {
       closeModal(); render(); showToast('Photo uploaded');
     }catch(e){
       btn.disabled = false; btn.textContent = 'Upload';
-      showToast("Couldn't upload — try a smaller photo");
+      var msg = (e && e.message) ? e.message : 'unknown error';
+      showToast("Couldn't upload: " + msg);
     }
   },
   'delete-photo': function(el){
@@ -1349,10 +1349,10 @@ document.getElementById('fabBtn').addEventListener('click', function(e){
 /* ---------- image compression for photo uploads ---------- */
 function compressImage(file, maxDim, quality){
   return new Promise(function(resolve, reject){
-    var reader = new FileReader();
-    reader.onload = function(e){
-      var img = new Image();
-      img.onload = function(){
+    var blobUrl = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function(){
+      try{
         var w = img.width, h = img.height;
         var scale = Math.min(1, maxDim / Math.max(w, h));
         var cw = Math.max(1, Math.round(w * scale));
@@ -1361,13 +1361,18 @@ function compressImage(file, maxDim, quality){
         canvas.width = cw; canvas.height = ch;
         var ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, cw, ch);
+        URL.revokeObjectURL(blobUrl);
         resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = function(){ reject(new Error('bad image')); };
-      img.src = e.target.result;
+      }catch(err){
+        URL.revokeObjectURL(blobUrl);
+        reject(err);
+      }
     };
-    reader.onerror = function(){ reject(new Error('read failed')); };
-    reader.readAsDataURL(file);
+    img.onerror = function(){
+      URL.revokeObjectURL(blobUrl);
+      reject(new Error('Could not read that image file'));
+    };
+    img.src = blobUrl;
   });
 }
 
