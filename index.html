@@ -398,7 +398,22 @@ var state = {
   checkinDone: null,
   prefillCode: ''
 };
-// Firebase authentication
+
+/* ---------- Firebase config ---------- */
+  var firebaseConfig = {
+  apiKey: "AIzaSyA8aVAvCq4QwGYMwygv6rWzVq5QACaWVVg",
+  authDomain: "redcross-club-af2a2.firebaseapp.com",
+  projectId: "redcross-club-af2a2",
+  storageBucket: "redcross-club-af2a2.firebasestorage.app",
+  messagingSenderId: "572213825044",
+  appId: "1:572213825044:web:dde92a405188c99dc1e101"
+};
+firebase.initializeApp(firebaseConfig);
+
+var db = firebase.firestore();
+
+/* auth*/
+
 var auth = firebase.auth();
 var isAdmin = false;
 
@@ -412,7 +427,6 @@ auth.onAuthStateChanged(function(user) {
   }
 });
 
-// Call this when clicking your Admin Login button
 function loginAdmin() {
   var email = prompt("Admin Email:");
   if (!email) return;
@@ -435,24 +449,9 @@ function logoutAdmin() {
   });
 }
 
-/* ---------- Firebase config ---------- */
-  var firebaseConfig = {
-  apiKey: "AIzaSyA8aVAvCq4QwGYMwygv6rWzVq5QACaWVVg",
-  authDomain: "redcross-club-af2a2.firebaseapp.com",
-  projectId: "redcross-club-af2a2",
-  storageBucket: "redcross-club-af2a2.firebasestorage.app",
-  messagingSenderId: "572213825044",
-  appId: "1:572213825044:web:dde92a405188c99dc1e101"
-};
-firebase.initializeApp(firebaseConfig);
-
-var db = firebase.firestore();
-var auth = firebase.auth();
-var isAdmin = false;
-
 auth.onAuthStateChanged(function(user) {
   isAdmin = !!user;
-  if (typeof redner === 'function') {
+  if (typeof render === 'function') {
     render();
   }
 });
