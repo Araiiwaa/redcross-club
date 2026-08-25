@@ -586,7 +586,13 @@ function showSetupScreen(){
 
 /* ---------- render dispatch ---------- */
 function render(){
+  if (!appData) {
+    console.log("Waiting for appData to load from FireStore...");
+    return;
+  }
+
   document.getElementById('clubNameDisplay').textContent = appData.clubName || 'Red Cross Club';
+  
   if (!isAdmin) {
   var editBtn = document.querySelector('.edit-name-btn');
   if (editBtn) editBtn.style.display = 'none';
@@ -594,8 +600,10 @@ function render(){
   document.querySelectorAll('.navbtn').forEach(function(b){
     b.classList.toggle('active', b.dataset.tab === state.tab);
   });
+
   var fab = document.getElementById('fabBtn');
   var main = document.getElementById('content');
+  
   if(state.tab === 'checkin'){
     fab.style.display = 'none';
     main.innerHTML = renderCheckIn();
