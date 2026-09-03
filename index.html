@@ -608,7 +608,7 @@ function renderTake(){
   }
   var html = '<div class="meeting-picker">';
   html += '<label class="field-label">Meeting</label>';
-  html += '<select id="meetingSelect" data-action="pick-meeting">';
+  html += '<select id="meetingSelect">';
   html += '<option value="">Select a meeting…</option>';
   appData.meetings.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).forEach(function(m){
     html += '<option value="'+m.id+'" '+(state.currentMeetingId===m.id?'selected':'')+'>'+escapeHtml(m.title)+' · '+fmtDate(m.date)+'</option>';
